@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Trash2, Check, Star } from 'lucide-react'
 
 const TRICK_TYPES = [
-  'Rail', 'Gap', 'Half Pipe', 'Ledge', 'Stairs', 'Manual', 'Flip Trick', 'Grind', 'Other'
+  'Rail', 'Gap', 'Half Pipe', 'Ledge', 'Stairs', 'Manual', 'Flip Trick', 'Grind', 'Line', 'Other'
 ]
 
 function StarRating({ value, onChange, label, darkMode }) {
@@ -155,6 +155,34 @@ export function ClassificationForm({ classification, onChange, onSave, isSaving,
                 label="Difficulty"
                 darkMode={darkMode}
               />
+
+              <div className="flex items-center justify-between py-2 px-2">
+                <span className={`text-sm ${colors.textSecondary}`}>Requires Clipping</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onChange({ ...classification, requiresClipping: false })}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                      classification.requiresClipping === false
+                        ? 'bg-green-500 text-white'
+                        : `${colors.buttonBg} ${colors.buttonHover} ${colors.text}`
+                    }`}
+                  >
+                    No
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onChange({ ...classification, requiresClipping: true })}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                      classification.requiresClipping === true
+                        ? 'bg-orange-500 text-white'
+                        : `${colors.buttonBg} ${colors.buttonHover} ${colors.text}`
+                    }`}
+                  >
+                    Yes
+                  </button>
+                </div>
+              </div>
             </div>
           </motion.div>
         )}

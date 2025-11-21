@@ -22,6 +22,7 @@ export function VideoClassifierPage() {
     trickType: '',
     trickRanking: 0,
     trickDifficulty: 0,
+    requiresClipping: null,
   })
   const formRef = useRef(null)
 
@@ -67,6 +68,7 @@ export function VideoClassifierPage() {
         trickType: existingClassification.trick_type || '',
         trickRanking: existingClassification.trick_ranking || 0,
         trickDifficulty: existingClassification.trick_difficulty || 0,
+        requiresClipping: existingClassification.requires_clipping ?? null,
       })
     } else {
       setClassification({
@@ -74,6 +76,7 @@ export function VideoClassifierPage() {
         trickType: '',
         trickRanking: 0,
         trickDifficulty: 0,
+        requiresClipping: null,
       })
     }
   }, [existingClassification, currentPostId])
@@ -113,6 +116,7 @@ export function VideoClassifierPage() {
       trickType: classification.trickType || null,
       trickRanking: classification.trickRanking || null,
       trickDifficulty: classification.trickDifficulty || null,
+      requiresClipping: classification.requiresClipping,
     }
 
     try {
