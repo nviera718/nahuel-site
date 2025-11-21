@@ -25,8 +25,6 @@ export function VideoClassifierPage() {
     requiresClipping: null,
   })
   const formRef = useRef(null)
-  const touchStartX = useRef(null)
-  const touchStartY = useRef(null)
 
   // Fetch all videos for this profile to enable prev/next navigation
   const { data: profileVideos } = useQuery({
@@ -111,31 +109,18 @@ export function VideoClassifierPage() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [currentIndex, postIds])
 
-  // Swipe gesture handlers
-  const handleTouchStart = (e) => {
-    touchStartX.current = e.touches[0].clientX
-    touchStartY.current = e.touches[0].clientY
-  }
+  // Drag gesture handler for Tinder-style navigation
+  const handleDragEnd = (_, info) => {
+    const threshold = 100
+    const velocity = info.velocity.x
+    const offset = info.offset.x
 
-  const handleTouchEnd = (e) => {
-    if (touchStartX.current === null || touchStartY.current === null) return
-
-    const touchEndX = e.changedTouches[0].clientX
-    const touchEndY = e.changedTouches[0].clientY
-    const deltaX = touchEndX - touchStartX.current
-    const deltaY = touchEndY - touchStartY.current
-
-    // Only trigger if horizontal swipe is dominant and significant
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
-      if (deltaX > 0) {
-        goToPrev() // Swipe right = previous
-      } else {
-        goToNext() // Swipe left = next
-      }
+    // Trigger navigation if dragged far enough or with enough velocity
+    if (offset > threshold || velocity > 500) {
+      goToPrev()
+    } else if (offset < -threshold || velocity < -500) {
+      goToNext()
     }
-
-    touchStartX.current = null
-    touchStartY.current = null
   }
 
   const handleSave = async () => {
@@ -209,11 +194,7 @@ export function VideoClassifierPage() {
         </div>
       </header>
 
-      <main
-        className="flex-1 overflow-auto"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
+      <main className="flex-1 overflow-auto">
         <AnimatePresence mode="wait">
           {showLoading && isLoading ? (
             <motion.div
@@ -245,13 +226,55 @@ export function VideoClassifierPage() {
               key={currentPostId}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              exit={{ opacity: 0, x: 300 }}
               transition={{ duration: 0.15 }}
-              className="min-h-full flex flex-col lg:flex-row lg:pt-20 items-center lg:items-start lg:justify-center gap-4 lg:gap-8 p-4 lg:px-8"
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.5}
+              onDragEnd={handleDragEnd}
+              whileDrag={{ scale: 0.98, rotate: 1 }}
+              className="min-h-full flex flex-col lg:flex-row lg:pt-20 items-center lg:items-start lg:justify-center gap-4 lg:gap-8 p-4 lg:px-8 cursor-grab active:cursor-grabbing"
             >
-              {/* Video embed */}
-              <div className="flex-shrink-0 w-full max-w-[400px] lg:max-w-none lg:w-auto pt-2">
+              {/* Video embed with swipe overlay */}
+              <div className="flex-shrink-0 w-full max-w-[400px] lg:max-w-none lg:w-auto pt-2 relative">
                 <InstagramEmbed postUrl={post.post_url} darkMode={darkMode} />
+                {/* Invisible swipe capture layer */}
+                <div
+                  className="absolute inset-0 z-10"
+                  style={{ touchAction: 'pan-y' }}
+                  onPointerDown={(e) => {
+                    // Allow clicks to pass through
+                    if (e.pointerType === 'mouse' || e.pressure === 0) {
+                      e.currentTarget.style.pointerEvents = 'none'
+                      setTimeout(() => {
+                        e.currentTarget.style.pointerEvents = 'auto'
+                      }, 100)
+                    }
+                  }}
+                  onTouchStart={(e) => {
+                    const touch = e.touches[0]
+                    e.currentTarget.dataset.startX = touch.clientX
+                    e.currentTarget.dataset.startY = touch.clientY
+                  }}
+                  onTouchEnd={(e) => {
+                    const startX = parseFloat(e.currentTarget.dataset.startX)
+                    const startY = parseFloat(e.currentTarget.dataset.startY)
+                    if (isNaN(startX)) return
+
+                    const touch = e.changedTouches[0]
+                    const deltaX = touch.clientX - startX
+                    const deltaY = touch.clientY - startY
+
+                    // Only trigger if horizontal swipe is dominant
+                    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 80) {
+                      if (deltaX > 0) {
+                        goToPrev()
+                      } else {
+                        goToNext()
+                      }
+                    }
+                  }}
+                />
               </div>
 
               {/* Classification form */}
