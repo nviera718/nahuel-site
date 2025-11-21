@@ -25,7 +25,7 @@ export function useUpdateClassification() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (data) => api.classifications.update(data.post_id, data),
+    mutationFn: (data) => api.classifications.update(data.postId, data),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['classification', data.post_id] })
     },

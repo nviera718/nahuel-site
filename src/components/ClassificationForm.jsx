@@ -7,27 +7,27 @@ const TRICK_TYPES = [
 
 function StarRating({ value, onChange, label, darkMode }) {
   const labelColor = darkMode ? 'text-[#aaaaaa]' : 'text-[#606060]'
-  const emptyStarColor = darkMode ? 'text-[#3f3f3f] hover:text-[#606060]' : 'text-[#d0d0d0] hover:text-[#a0a0a0]'
+  const emptyStarColor = darkMode ? 'text-[#404040] hover:text-[#666666]' : 'text-[#d0d0d0] hover:text-[#a0a0a0]'
 
   return (
-    <div className="flex items-center justify-between">
-      <span className={`text-xs ${labelColor}`}>{label}</span>
-      <div className="flex items-center gap-0.5">
+    <div className="flex items-center justify-between py-2">
+      <span className={`text-sm ${labelColor}`}>{label}</span>
+      <div className="flex items-center gap-1">
         {[1, 2, 3, 4, 5].map(star => (
           <button
             key={star}
             type="button"
-            className="p-0.5 hover:scale-110 transition-transform cursor-pointer bg-transparent border-0"
+            className="p-1 hover:scale-110 transition-transform cursor-pointer bg-transparent border-0"
             onClick={() => onChange(star)}
           >
             <Star
-              className={`w-5 h-5 transition-colors ${
+              className={`w-6 h-6 transition-colors ${
                 star <= value ? 'fill-yellow-400 text-yellow-400' : emptyStarColor
               }`}
             />
           </button>
         ))}
-        <span className={`text-xs ml-1 w-6 ${labelColor}`}>{value}/5</span>
+        <span className={`text-sm ml-2 w-8 text-right tabular-nums ${labelColor}`}>{value}/5</span>
       </div>
     </div>
   )
@@ -36,54 +36,58 @@ function StarRating({ value, onChange, label, darkMode }) {
 export function ClassificationForm({ classification, onChange, onSave, isSaving, darkMode = true }) {
   const colors = darkMode
     ? {
-        cardBg: 'bg-[#212121]',
+        cardBg: 'bg-[#181818]',
         cardBorder: 'border-[#303030]',
         text: 'text-[#f1f1f1]',
         textSecondary: 'text-[#aaaaaa]',
-        buttonBg: 'bg-[#3f3f3f]',
-        buttonHover: 'hover:bg-[#4f4f4f]',
-        inputBg: 'bg-[#121212]',
+        buttonBg: 'bg-[#272727]',
+        buttonHover: 'hover:bg-[#3a3a3a]',
+        inputBg: 'bg-[#0f0f0f]',
         inputBorder: 'border-[#303030]',
         inputText: 'text-[#f1f1f1]',
-        optionBg: '#121212',
+        optionBg: '#0f0f0f',
+        shadow: 'shadow-lg shadow-black/20',
       }
     : {
         cardBg: 'bg-white',
-        cardBorder: 'border-[#e5e5e5]',
+        cardBorder: 'border-[#e0e0e0]',
         text: 'text-[#0f0f0f]',
         textSecondary: 'text-[#606060]',
         buttonBg: 'bg-[#f2f2f2]',
         buttonHover: 'hover:bg-[#e5e5e5]',
         inputBg: 'bg-[#f9f9f9]',
-        inputBorder: 'border-[#e5e5e5]',
+        inputBorder: 'border-[#e0e0e0]',
         inputText: 'text-[#0f0f0f]',
         optionBg: '#ffffff',
+        shadow: 'shadow-lg shadow-black/10',
       }
 
   return (
-    <div className={`${colors.cardBg} rounded-lg p-4 border ${colors.cardBorder}`}>
+    <div className={`${colors.cardBg} rounded-2xl p-6 border ${colors.cardBorder} ${colors.shadow}`}>
+      <h3 className={`text-lg font-semibold ${colors.text} mb-6`}>Classification</h3>
+
       {/* Approval Buttons */}
-      <div className="grid grid-cols-2 gap-2 mb-4">
+      <div className="grid grid-cols-2 gap-3 mb-6">
         <button
-          className={`h-9 flex items-center justify-center gap-1.5 rounded text-sm font-medium transition-all ${
+          className={`h-12 flex items-center justify-center gap-2 rounded-xl text-sm font-medium transition-all ${
             classification.isApproved === false
-              ? 'bg-red-600 hover:bg-red-700 text-white'
+              ? 'bg-red-500 hover:bg-red-600 text-white'
               : `${colors.buttonBg} ${colors.buttonHover} ${colors.text}`
           }`}
           onClick={() => onChange({ ...classification, isApproved: false })}
         >
-          <Trash2 className="w-3.5 h-3.5" />
+          <Trash2 className="w-4 h-4" />
           Trash
         </button>
         <button
-          className={`h-9 flex items-center justify-center gap-1.5 rounded text-sm font-medium transition-all ${
+          className={`h-12 flex items-center justify-center gap-2 rounded-xl text-sm font-medium transition-all ${
             classification.isApproved === true
-              ? 'bg-green-600 hover:bg-green-700 text-white'
+              ? 'bg-green-500 hover:bg-green-600 text-white'
               : `${colors.buttonBg} ${colors.buttonHover} ${colors.text}`
           }`}
           onClick={() => onChange({ ...classification, isApproved: true })}
         >
-          <Check className="w-3.5 h-3.5" />
+          <Check className="w-4 h-4" />
           Approve
         </button>
       </div>
@@ -96,18 +100,18 @@ export function ClassificationForm({ classification, onChange, onSave, isSaving,
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.15 }}
-            className={`space-y-3 pt-4 border-t ${colors.cardBorder} overflow-hidden`}
+            transition={{ duration: 0.2 }}
+            className={`space-y-2 pt-6 border-t ${colors.cardBorder} overflow-hidden`}
           >
-            <div className="flex items-center justify-between">
-              <span className={`text-xs ${colors.textSecondary}`}>Trick Type</span>
+            <div className="flex items-center justify-between py-2">
+              <span className={`text-sm ${colors.textSecondary}`}>Trick Type</span>
               <select
                 value={classification.trickType}
                 onChange={(e) => onChange({ ...classification, trickType: e.target.value })}
-                className={`h-8 rounded px-2 text-xs ${colors.inputBg} border ${colors.inputBorder} ${colors.inputText} focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                className={`h-10 rounded-lg px-3 text-sm ${colors.inputBg} border ${colors.inputBorder} ${colors.inputText} focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all`}
                 style={{ backgroundColor: colors.optionBg }}
               >
-                <option value="" style={{ backgroundColor: colors.optionBg }}>Select...</option>
+                <option value="" style={{ backgroundColor: colors.optionBg }}>Select type...</option>
                 {TRICK_TYPES.map(type => (
                   <option key={type} value={type} style={{ backgroundColor: colors.optionBg }}>{type}</option>
                 ))}
@@ -132,13 +136,13 @@ export function ClassificationForm({ classification, onChange, onSave, isSaving,
       </AnimatePresence>
 
       {/* Save Button */}
-      <div className={`mt-4 pt-4 border-t ${colors.cardBorder}`}>
+      <div className={`mt-6 pt-6 border-t ${colors.cardBorder}`}>
         <button
-          className="w-full h-9 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full h-12 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
           onClick={onSave}
           disabled={classification.isApproved === null || isSaving}
         >
-          {isSaving ? 'Saving...' : 'Save'}
+          {isSaving ? 'Saving...' : 'Save Classification'}
         </button>
       </div>
     </div>

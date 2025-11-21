@@ -76,12 +76,13 @@ function VideoClassifierContent() {
   }, [currentPostId])
 
   const handleSave = async () => {
+    // API expects camelCase
     const payload = {
-      post_id: currentPostId,
-      is_approved: classification.isApproved,
-      trick_type: classification.trickType || null,
-      trick_ranking: classification.trickRanking || null,
-      trick_difficulty: classification.trickDifficulty || null,
+      postId: currentPostId,
+      isApproved: classification.isApproved,
+      trickType: classification.trickType || null,
+      trickRanking: classification.trickRanking || null,
+      trickDifficulty: classification.trickDifficulty || null,
     }
 
     try {
@@ -101,16 +102,16 @@ function VideoClassifierContent() {
   const colors = darkMode
     ? {
         bg: 'bg-[#0f0f0f]',
-        bgSecondary: 'bg-[#212121]',
-        bgHover: 'hover:bg-[#3f3f3f]',
+        bgSecondary: 'bg-[#181818]',
+        bgHover: 'hover:bg-[#272727]',
         text: 'text-[#f1f1f1]',
         textSecondary: 'text-[#aaaaaa]',
-        border: 'border-[#303030]',
+        border: 'border-[#272727]',
       }
     : {
         bg: 'bg-[#f9f9f9]',
         bgSecondary: 'bg-white',
-        bgHover: 'hover:bg-[#e5e5e5]',
+        bgHover: 'hover:bg-[#f2f2f2]',
         text: 'text-[#0f0f0f]',
         textSecondary: 'text-[#606060]',
         border: 'border-[#e5e5e5]',
@@ -118,36 +119,40 @@ function VideoClassifierContent() {
 
   return (
     <div className={`h-screen w-screen ${colors.bg} ${colors.text} flex flex-col`}>
-      {/* Header */}
-      <header className={`h-12 flex-shrink-0 border-b ${colors.border} ${colors.bgSecondary}`}>
-        <div className="w-full h-full px-4 flex items-center justify-between">
-          <span className={`text-sm font-medium ${colors.text}`}>Video Classifier</span>
+      {/* Header - YouTube style */}
+      <header className={`h-14 flex-shrink-0 border-b ${colors.border} ${colors.bgSecondary}`}>
+        <div className="h-full px-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <span className={`text-base font-semibold ${colors.text}`}>Video Classifier</span>
+          </div>
 
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setCurrentPostId(prev => Math.max(1, prev - 1))}
-              disabled={currentPostId <= 1}
-              className={`p-1.5 rounded transition-colors ${currentPostId <= 1 ? 'opacity-30 cursor-not-allowed' : colors.bgHover}`}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
+          <div className="flex items-center gap-2">
+            {/* Navigation pill */}
+            <div className={`flex items-center ${darkMode ? 'bg-[#272727]' : 'bg-[#f2f2f2]'} rounded-full`}>
+              <button
+                onClick={() => setCurrentPostId(prev => Math.max(1, prev - 1))}
+                disabled={currentPostId <= 1}
+                className={`p-2 rounded-full transition-colors ${currentPostId <= 1 ? 'opacity-30 cursor-not-allowed' : colors.bgHover}`}
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <span className={`text-sm font-medium px-2 min-w-[60px] text-center ${colors.text}`}>
+                #{currentPostId}
+              </span>
+              <button
+                onClick={() => setCurrentPostId(prev => prev + 1)}
+                className={`p-2 rounded-full transition-colors ${colors.bgHover}`}
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
 
-            <span className={`text-xs px-2 ${colors.textSecondary}`}>#{currentPostId}</span>
-
-            <button
-              onClick={() => setCurrentPostId(prev => prev + 1)}
-              className={`p-1.5 rounded transition-colors ${colors.bgHover}`}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-
-            <div className={`w-px h-4 mx-1 ${colors.border}`} />
-
+            {/* Theme toggle */}
             <button
               onClick={() => setDarkMode(!darkMode)}
-              className={`p-1.5 rounded transition-colors ${colors.bgHover}`}
+              className={`p-2 rounded-full transition-colors ${colors.bgHover}`}
             >
-              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
           </div>
         </div>
@@ -164,9 +169,9 @@ function VideoClassifierContent() {
               exit={{ opacity: 0 }}
               className="flex items-center justify-center h-full"
             >
-              <div className={`flex flex-col items-center gap-2 ${colors.textSecondary}`}>
-                <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                <span className="text-xs">Loading...</span>
+              <div className={`flex flex-col items-center gap-3 ${colors.textSecondary}`}>
+                <div className="w-8 h-8 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm">Loading...</span>
               </div>
             </motion.div>
           ) : !post && !isLoading ? (
@@ -178,7 +183,7 @@ function VideoClassifierContent() {
               className="flex items-center justify-center h-full"
             >
               <div className={`text-center ${colors.textSecondary}`}>
-                <p className="text-sm">No post found</p>
+                <p>No post found</p>
               </div>
             </motion.div>
           ) : post ? (
@@ -188,24 +193,22 @@ function VideoClassifierContent() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="h-full grid grid-cols-1 lg:grid-cols-2"
+              className="h-full flex items-center justify-center gap-8 px-8"
             >
               {/* Video */}
-              <div className="h-full flex items-center justify-center p-4 overflow-hidden">
+              <div className="flex-shrink-0">
                 <InstagramEmbed postUrl={post.post_url} />
               </div>
 
               {/* Classification */}
-              <div className="h-full flex items-center justify-center p-4 overflow-y-auto">
-                <div className="w-full max-w-sm">
-                  <ClassificationForm
-                    classification={classification}
-                    onChange={setClassification}
-                    onSave={handleSave}
-                    isSaving={isSaving}
-                    darkMode={darkMode}
-                  />
-                </div>
+              <div className="w-full max-w-md">
+                <ClassificationForm
+                  classification={classification}
+                  onChange={setClassification}
+                  onSave={handleSave}
+                  isSaving={isSaving}
+                  darkMode={darkMode}
+                />
               </div>
             </motion.div>
           ) : null}
