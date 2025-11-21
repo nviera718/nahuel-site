@@ -35,21 +35,16 @@ function VideoClassifierContent() {
 
   const isLoading = postLoading || classificationLoading
 
-  // Debounce loading state to prevent flicker
   useEffect(() => {
     if (isLoading) {
-      loadingTimeout.current = setTimeout(() => {
-        setShowLoading(true)
-      }, 200)
+      loadingTimeout.current = setTimeout(() => setShowLoading(true), 200)
     } else {
       clearTimeout(loadingTimeout.current)
       setShowLoading(false)
     }
-
     return () => clearTimeout(loadingTimeout.current)
   }, [isLoading])
 
-  // Load existing classification when it changes
   useEffect(() => {
     if (existingClassification) {
       setClassification({
@@ -68,7 +63,6 @@ function VideoClassifierContent() {
     }
   }, [existingClassification, currentPostId])
 
-  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'ArrowLeft' && currentPostId > 1) {
@@ -77,7 +71,6 @@ function VideoClassifierContent() {
         setCurrentPostId(prev => prev + 1)
       }
     }
-
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [currentPostId])
@@ -105,15 +98,14 @@ function VideoClassifierContent() {
 
   const isSaving = createClassification.isPending || updateClassification.isPending
 
-  // YouTube-inspired color palette
   const colors = darkMode
     ? {
         bg: 'bg-[#0f0f0f]',
-        bgSecondary: 'bg-[#272727]',
+        bgSecondary: 'bg-[#212121]',
         bgHover: 'hover:bg-[#3f3f3f]',
         text: 'text-[#f1f1f1]',
         textSecondary: 'text-[#aaaaaa]',
-        border: 'border-[#3f3f3f]',
+        border: 'border-[#303030]',
       }
     : {
         bg: 'bg-[#f9f9f9]',
@@ -125,113 +117,99 @@ function VideoClassifierContent() {
       }
 
   return (
-    <div className={`h-screen ${colors.bg} ${colors.text} transition-colors duration-200 flex flex-col`}>
+    <div className={`h-screen w-screen ${colors.bg} ${colors.text} flex flex-col`}>
       {/* Header */}
-      <header className={`flex-shrink-0 border-b ${colors.border} ${colors.bgSecondary}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <h1 className={`text-lg font-medium ${colors.text}`}>
-            Video Classifier
-          </h1>
+      <header className={`h-12 flex-shrink-0 border-b ${colors.border} ${colors.bgSecondary}`}>
+        <div className="w-full h-full px-4 flex items-center justify-between">
+          <span className={`text-sm font-medium ${colors.text}`}>Video Classifier</span>
 
-          <div className="flex items-center gap-2">
-            {/* Navigation */}
-            <div className={`flex items-center gap-1 ${colors.bgSecondary} rounded-full px-1`}>
-              <button
-                onClick={() => setCurrentPostId(prev => Math.max(1, prev - 1))}
-                disabled={currentPostId <= 1}
-                className={`p-2 rounded-full transition-colors ${
-                  currentPostId <= 1
-                    ? 'opacity-30 cursor-not-allowed'
-                    : colors.bgHover
-                }`}
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPostId(prev => Math.max(1, prev - 1))}
+              disabled={currentPostId <= 1}
+              className={`p-1.5 rounded transition-colors ${currentPostId <= 1 ? 'opacity-30 cursor-not-allowed' : colors.bgHover}`}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
 
-              <span className={`text-sm font-medium px-3 min-w-[80px] text-center ${colors.textSecondary}`}>
-                Post #{currentPostId}
-              </span>
+            <span className={`text-xs px-2 ${colors.textSecondary}`}>#{currentPostId}</span>
 
-              <button
-                onClick={() => setCurrentPostId(prev => prev + 1)}
-                className={`p-2 rounded-full transition-colors ${colors.bgHover}`}
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
+            <button
+              onClick={() => setCurrentPostId(prev => prev + 1)}
+              className={`p-1.5 rounded transition-colors ${colors.bgHover}`}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
 
-            {/* Theme Toggle */}
+            <div className={`w-px h-4 mx-1 ${colors.border}`} />
+
             <button
               onClick={() => setDarkMode(!darkMode)}
-              className={`p-2 rounded-full transition-colors ${colors.bgHover}`}
-              title={darkMode ? 'Light mode' : 'Dark mode'}
+              className={`p-1.5 rounded transition-colors ${colors.bgHover}`}
             >
-              {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Main */}
       <main className="flex-1 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 h-full">
-          <AnimatePresence mode="wait">
-            {showLoading && isLoading ? (
-              <motion.div
-                key="loading"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex items-center justify-center h-full"
-              >
-                <div className={`flex flex-col items-center gap-3 ${colors.textSecondary}`}>
-                  <div className="w-8 h-8 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  <span className="text-sm">Loading...</span>
-                </div>
-              </motion.div>
-            ) : !post && !isLoading ? (
-              <motion.div
-                key="not-found"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex items-center justify-center h-full"
-              >
-                <div className={`text-center ${colors.textSecondary}`}>
-                  <p className="text-lg">No post found</p>
-                  <p className="text-sm mt-1">Try a different post ID</p>
-                </div>
-              </motion.div>
-            ) : post ? (
-              <motion.div
-                key={currentPostId}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.15 }}
-                className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full"
-              >
-                {/* Video Section */}
-                <div className="flex items-center justify-center overflow-hidden">
-                  <InstagramEmbed postUrl={post.post_url} />
-                </div>
+        <AnimatePresence mode="wait">
+          {showLoading && isLoading ? (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center justify-center h-full"
+            >
+              <div className={`flex flex-col items-center gap-2 ${colors.textSecondary}`}>
+                <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                <span className="text-xs">Loading...</span>
+              </div>
+            </motion.div>
+          ) : !post && !isLoading ? (
+            <motion.div
+              key="not-found"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center justify-center h-full"
+            >
+              <div className={`text-center ${colors.textSecondary}`}>
+                <p className="text-sm">No post found</p>
+              </div>
+            </motion.div>
+          ) : post ? (
+            <motion.div
+              key={currentPostId}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="h-full grid grid-cols-1 lg:grid-cols-2"
+            >
+              {/* Video */}
+              <div className="h-full flex items-center justify-center p-4 overflow-hidden">
+                <InstagramEmbed postUrl={post.post_url} />
+              </div>
 
-                {/* Classification Section */}
-                <div className="flex items-start justify-center overflow-y-auto">
-                  <div className="w-full max-w-md">
-                    <ClassificationForm
-                      classification={classification}
-                      onChange={setClassification}
-                      onSave={handleSave}
-                      isSaving={isSaving}
-                      darkMode={darkMode}
-                    />
-                  </div>
+              {/* Classification */}
+              <div className="h-full flex items-center justify-center p-4 overflow-y-auto">
+                <div className="w-full max-w-sm">
+                  <ClassificationForm
+                    classification={classification}
+                    onChange={setClassification}
+                    onSave={handleSave}
+                    isSaving={isSaving}
+                    darkMode={darkMode}
+                  />
                 </div>
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-        </div>
+              </div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </main>
     </div>
   )
