@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Moon, Sun, ChevronLeft, ChevronRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -19,6 +19,8 @@ const queryClient = new QueryClient({
 function VideoClassifierContent() {
   const [currentPostId, setCurrentPostId] = useState(1)
   const [darkMode, setDarkMode] = useState(true)
+  const [showLoading, setShowLoading] = useState(false)
+  const loadingTimeout = useRef(null)
   const [classification, setClassification] = useState({
     isApproved: null,
     trickType: '',
@@ -31,6 +33,22 @@ function VideoClassifierContent() {
   const createClassification = useCreateClassification()
   const updateClassification = useUpdateClassification()
 
+  const isLoading = postLoading || classificationLoading
+
+  // Debounce loading state to prevent flicker
+  useEffect(() => {
+    if (isLoading) {
+      loadingTimeout.current = setTimeout(() => {
+        setShowLoading(true)
+      }, 200)
+    } else {
+      clearTimeout(loadingTimeout.current)
+      setShowLoading(false)
+    }
+
+    return () => clearTimeout(loadingTimeout.current)
+  }, [isLoading])
+
   // Load existing classification when it changes
   useEffect(() => {
     if (existingClassification) {
@@ -41,7 +59,6 @@ function VideoClassifierContent() {
         trickDifficulty: existingClassification.trick_difficulty || 0,
       })
     } else {
-      // Reset form for new post
       setClassification({
         isApproved: null,
         trickType: '',
@@ -65,11 +82,6 @@ function VideoClassifierContent() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [currentPostId])
 
-  // Apply dark/light mode
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', darkMode)
-  }, [darkMode])
-
   const handleSave = async () => {
     const payload = {
       post_id: currentPostId,
@@ -85,8 +97,6 @@ function VideoClassifierContent() {
       } else {
         await createClassification.mutateAsync(payload)
       }
-
-      // Move to next post after successful save
       setCurrentPostId(prev => prev + 1)
     } catch (error) {
       console.error('Failed to save classification:', error)
@@ -94,55 +104,57 @@ function VideoClassifierContent() {
   }
 
   const isSaving = createClassification.isPending || updateClassification.isPending
-  const isLoading = postLoading || classificationLoading
 
-  const themeClasses = darkMode
-    ? 'bg-[#0f0f0f] text-white'
-    : 'bg-gray-50 text-gray-900'
-
-  const headerClasses = darkMode
-    ? 'border-white/10 bg-[#0f0f0f]'
-    : 'border-gray-200 bg-white'
-
-  const buttonClasses = darkMode
-    ? 'hover:bg-white/10 text-white'
-    : 'hover:bg-gray-100 text-gray-900'
-
-  const textSecondaryClasses = darkMode
-    ? 'text-white/70'
-    : 'text-gray-600'
+  // YouTube-inspired color palette
+  const colors = darkMode
+    ? {
+        bg: 'bg-[#0f0f0f]',
+        bgSecondary: 'bg-[#272727]',
+        bgHover: 'hover:bg-[#3f3f3f]',
+        text: 'text-[#f1f1f1]',
+        textSecondary: 'text-[#aaaaaa]',
+        border: 'border-[#3f3f3f]',
+      }
+    : {
+        bg: 'bg-[#f9f9f9]',
+        bgSecondary: 'bg-white',
+        bgHover: 'hover:bg-[#e5e5e5]',
+        text: 'text-[#0f0f0f]',
+        textSecondary: 'text-[#606060]',
+        border: 'border-[#e5e5e5]',
+      }
 
   return (
-    <div className={`min-h-screen ${themeClasses} transition-colors overflow-hidden`}>
+    <div className={`h-screen ${colors.bg} ${colors.text} transition-colors duration-200 flex flex-col`}>
       {/* Header */}
-      <header className={`border-b ${headerClasses}`}>
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+      <header className={`flex-shrink-0 border-b ${colors.border} ${colors.bgSecondary}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+          <h1 className={`text-lg font-medium ${colors.text}`}>
             Video Classifier
           </h1>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             {/* Navigation */}
-            <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-1 ${colors.bgSecondary} rounded-full px-1`}>
               <button
                 onClick={() => setCurrentPostId(prev => Math.max(1, prev - 1))}
                 disabled={currentPostId <= 1}
-                className={`p-2 rounded-lg transition-colors ${
+                className={`p-2 rounded-full transition-colors ${
                   currentPostId <= 1
                     ? 'opacity-30 cursor-not-allowed'
-                    : buttonClasses
+                    : colors.bgHover
                 }`}
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
 
-              <span className={`text-sm font-medium px-3 ${textSecondaryClasses}`}>
+              <span className={`text-sm font-medium px-3 min-w-[80px] text-center ${colors.textSecondary}`}>
                 Post #{currentPostId}
               </span>
 
               <button
                 onClick={() => setCurrentPostId(prev => prev + 1)}
-                className={`p-2 rounded-lg transition-colors ${buttonClasses}`}
+                className={`p-2 rounded-full transition-colors ${colors.bgHover}`}
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -151,7 +163,8 @@ function VideoClassifierContent() {
             {/* Theme Toggle */}
             <button
               onClick={() => setDarkMode(!darkMode)}
-              className={`p-2 rounded-lg transition-colors ${buttonClasses}`}
+              className={`p-2 rounded-full transition-colors ${colors.bgHover}`}
+              title={darkMode ? 'Light mode' : 'Dark mode'}
             >
               {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
@@ -160,49 +173,64 @@ function VideoClassifierContent() {
       </header>
 
       {/* Main Content */}
-      <main className="h-[calc(100vh-73px)] overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 py-8 h-full">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className={textSecondaryClasses}>
-                Loading...
-              </div>
-            </div>
-          ) : !post ? (
-            <div className="flex items-center justify-center h-full">
-              <div className={textSecondaryClasses}>
-                No post found
-              </div>
-            </div>
-          ) : (
-            <AnimatePresence mode="wait">
+      <main className="flex-1 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 h-full">
+          <AnimatePresence mode="wait">
+            {showLoading && isLoading ? (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center justify-center h-full"
+              >
+                <div className={`flex flex-col items-center gap-3 ${colors.textSecondary}`}>
+                  <div className="w-8 h-8 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm">Loading...</span>
+                </div>
+              </motion.div>
+            ) : !post && !isLoading ? (
+              <motion.div
+                key="not-found"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center justify-center h-full"
+              >
+                <div className={`text-center ${colors.textSecondary}`}>
+                  <p className="text-lg">No post found</p>
+                  <p className="text-sm mt-1">Try a different post ID</p>
+                </div>
+              </motion.div>
+            ) : post ? (
               <motion.div
                 key={currentPostId}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-                className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.15 }}
+                className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full"
               >
                 {/* Video Section */}
-                <div className="flex items-center justify-center overflow-auto">
+                <div className="flex items-center justify-center overflow-hidden">
                   <InstagramEmbed postUrl={post.post_url} />
                 </div>
 
                 {/* Classification Section */}
-                <div className="flex items-start justify-center overflow-auto">
+                <div className="flex items-start justify-center overflow-y-auto">
                   <div className="w-full max-w-md">
                     <ClassificationForm
                       classification={classification}
                       onChange={setClassification}
                       onSave={handleSave}
                       isSaving={isSaving}
+                      darkMode={darkMode}
                     />
                   </div>
                 </div>
               </motion.div>
-            </AnimatePresence>
-          )}
+            ) : null}
+          </AnimatePresence>
         </div>
       </main>
     </div>

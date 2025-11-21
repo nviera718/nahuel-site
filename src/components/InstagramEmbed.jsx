@@ -1,36 +1,48 @@
-import { useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { useEffect, useRef } from 'react'
 
 export function InstagramEmbed({ postUrl }) {
+  const containerRef = useRef(null)
+
   useEffect(() => {
-    if (window.instgrm) {
-      window.instgrm.Embeds.process()
+    // Load Instagram embed script if not already loaded
+    if (!document.querySelector('script[src*="instagram.com/embed.js"]')) {
+      const script = document.createElement('script')
+      script.src = 'https://www.instagram.com/embed.js'
+      script.async = true
+      document.body.appendChild(script)
     }
+  }, [])
+
+  useEffect(() => {
+    // Process embed when postUrl changes
+    const timer = setTimeout(() => {
+      if (window.instgrm) {
+        window.instgrm.Embeds.process()
+      }
+    }, 100)
+
+    return () => clearTimeout(timer)
   }, [postUrl])
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3 }}
-      className="flex justify-center"
-    >
+    <div ref={containerRef} className="flex justify-center w-full">
       <blockquote
+        key={postUrl}
         className="instagram-media"
         data-instgrm-permalink={postUrl}
         data-instgrm-version="14"
+        data-instgrm-captioned
         style={{
-          background: '#FFF',
+          background: 'transparent',
           border: '0',
           borderRadius: '12px',
-          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
           margin: '0 auto',
           maxWidth: '540px',
           minWidth: '326px',
           padding: '0',
-          width: 'calc(100% - 2px)'
+          width: '100%'
         }}
       />
-    </motion.div>
+    </div>
   )
 }
