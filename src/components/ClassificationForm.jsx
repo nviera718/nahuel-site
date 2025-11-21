@@ -92,16 +92,28 @@ export function ClassificationForm({ classification, onChange, onSave, isSaving,
         </button>
       </div>
 
-      {/* Save Button - always visible right after approval buttons */}
-      <div className="mt-6">
-        <button
-          className="w-full h-12 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
-          onClick={onSave}
-          disabled={classification.isApproved === null || isSaving}
-        >
-          {isSaving ? 'Saving...' : 'Save Classification'}
-        </button>
-      </div>
+      {/* Save Button - only visible after selection made */}
+      <AnimatePresence>
+        {classification.isApproved !== null && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="mt-6">
+              <button
+                className="w-full h-12 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+                onClick={onSave}
+                disabled={isSaving}
+              >
+                {isSaving ? 'Saving...' : 'Save Classification'}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Classification Form - expands below when approved */}
       <AnimatePresence mode="wait">

@@ -12,7 +12,7 @@ import { useTheme } from '../context/ThemeContext'
 
 export function VideoClassifierPage() {
   const navigate = useNavigate()
-  const { profileId, postId: initialPostId } = useParams({ from: '/profiles/$profileId/classify/$postId' })
+  const { profileId, postId: initialPostId } = useParams({ from: '/content-farm/$profileId/classify/$postId' })
   const [currentPostId, setCurrentPostId] = useState(parseInt(initialPostId))
   const { darkMode, setDarkMode, colors } = useTheme()
   const [showLoading, setShowLoading] = useState(false)
@@ -23,6 +23,7 @@ export function VideoClassifierPage() {
     trickRanking: 0,
     trickDifficulty: 0,
   })
+  const formRef = useRef(null)
 
   // Fetch all videos for this profile to enable prev/next navigation
   const { data: profileVideos } = useQuery({
@@ -81,7 +82,7 @@ export function VideoClassifierPage() {
     if (currentIndex > 0) {
       const prevPostId = postIds[currentIndex - 1]
       setCurrentPostId(prevPostId)
-      navigate({ to: '/profiles/$profileId/classify/$postId', params: { profileId, postId: prevPostId }, replace: true })
+      navigate({ to: '/content-farm/$profileId/classify/$postId', params: { profileId, postId: prevPostId }, replace: true })
     }
   }
 
@@ -89,7 +90,7 @@ export function VideoClassifierPage() {
     if (currentIndex < postIds.length - 1) {
       const nextPostId = postIds[currentIndex + 1]
       setCurrentPostId(nextPostId)
-      navigate({ to: '/profiles/$profileId/classify/$postId', params: { profileId, postId: nextPostId }, replace: true })
+      navigate({ to: '/content-farm/$profileId/classify/$postId', params: { profileId, postId: nextPostId }, replace: true })
     }
   }
 
@@ -136,7 +137,7 @@ export function VideoClassifierPage() {
         <div className="h-full px-3 md:px-4 flex items-center justify-between">
           <div className="flex items-center gap-2 md:gap-4">
             <button
-              onClick={() => navigate({ to: '/profiles/$profileId', params: { profileId } })}
+              onClick={() => navigate({ to: '/content-farm/$profileId', params: { profileId } })}
               className={`p-2 rounded-lg transition-colors ${colors.bgHover}`}
             >
               <ArrowLeft className="w-5 h-5" />
@@ -209,18 +210,26 @@ export function VideoClassifierPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="h-full flex flex-col lg:flex-row lg:pt-20 items-center lg:items-start justify-center gap-4 lg:gap-8 p-4 lg:px-8"
+              className="min-h-full flex flex-col lg:flex-row lg:pt-20 items-center lg:items-start lg:justify-center gap-4 lg:gap-8 p-4 lg:px-8"
             >
-              {/* Video embed - full width on mobile, fixed size on desktop */}
-              <div className="flex-shrink-0 w-full max-w-[400px] lg:max-w-none lg:w-auto">
+              {/* Video embed - takes most of viewport on mobile */}
+              <div className="flex-shrink-0 w-full max-w-[400px] lg:max-w-none lg:w-auto min-h-[65vh] lg:min-h-0 flex items-center">
                 <InstagramEmbed postUrl={post.post_url} />
               </div>
 
               {/* Classification form */}
-              <div className="w-full max-w-md lg:pt-20">
+              <div ref={formRef} className="w-full max-w-md lg:pt-20 pb-8">
                 <ClassificationForm
                   classification={classification}
-                  onChange={setClassification}
+                  onChange={(newClassification) => {
+                    setClassification(newClassification)
+                    // Scroll to form on mobile when user makes a selection
+                    if (newClassification.isApproved !== null && classification.isApproved === null) {
+                      setTimeout(() => {
+                        formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                      }, 100)
+                    }
+                  }}
                   onSave={handleSave}
                   isSaving={isSaving}
                   darkMode={darkMode}

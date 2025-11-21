@@ -224,7 +224,7 @@ export function HomePage() {
                     key={row.id}
                     profile={row.original}
                     colors={colors}
-                    onClick={() => navigate({ to: '/profiles/$profileId', params: { profileId: row.original.id } })}
+                    onClick={() => navigate({ to: '/content-farm/$profileId', params: { profileId: row.original.id } })}
                   />
                 ))}
                 {filteredRows.length === 0 && (
@@ -266,7 +266,7 @@ export function HomePage() {
                         <tr
                           key={row.id}
                           className={`border-b ${colors.border} last:border-0 ${colors.bgHover} cursor-pointer transition-colors`}
-                          onClick={() => navigate({ to: '/profiles/$profileId', params: { profileId: row.original.id } })}
+                          onClick={() => navigate({ to: '/content-farm/$profileId', params: { profileId: row.original.id } })}
                         >
                           {row.getVisibleCells().map(cell => (
                             <td key={cell.id} className="px-4 py-3">

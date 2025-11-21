@@ -166,7 +166,7 @@ function VideoCard({ video, onClick, colors }) {
 
 export function ProfileVideosPage() {
   const navigate = useNavigate()
-  const { profileId } = useParams({ from: '/profiles/$profileId' })
+  const { profileId } = useParams({ from: '/content-farm/$profileId' })
   const { darkMode, setDarkMode, colors } = useTheme()
 
   const { data, isLoading } = useQuery({
@@ -189,7 +189,7 @@ export function ProfileVideosPage() {
         <div className="h-full px-4 md:px-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate({ to: '/' })}
+              onClick={() => navigate({ to: '/content-farm' })}
               className={`p-2 ${colors.bgHover} rounded-lg transition-colors`}
             >
               <ArrowLeft className="w-5 h-5" />
@@ -229,7 +229,7 @@ export function ProfileVideosPage() {
                     key={row.id}
                     video={row.original}
                     colors={colors}
-                    onClick={() => navigate({ to: '/profiles/$profileId/classify/$postId', params: { profileId, postId: row.original.id } })}
+                    onClick={() => navigate({ to: '/content-farm/$profileId/classify/$postId', params: { profileId, postId: row.original.id } })}
                   />
                 ))}
                 {rows.length === 0 && (
@@ -264,7 +264,7 @@ export function ProfileVideosPage() {
                         <tr
                           key={row.id}
                           className={`border-b ${colors.border} last:border-0 ${colors.bgHover} cursor-pointer transition-colors`}
-                          onClick={() => navigate({ to: '/profiles/$profileId/classify/$postId', params: { profileId, postId: row.original.id } })}
+                          onClick={() => navigate({ to: '/content-farm/$profileId/classify/$postId', params: { profileId, postId: row.original.id } })}
                         >
                           {row.getVisibleCells().map(cell => (
                             <td key={cell.id} className="px-4 py-3">
