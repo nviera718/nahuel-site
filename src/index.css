@@ -1,8 +1,8 @@
 @import "tailwindcss";
+@source "../index.html";
+@source "./**/*.{js,jsx,ts,tsx}";
 
-* {
-  margin: 0;
-  padding: 0;
+*, *::before, *::after {
   box-sizing: border-box;
 }
 
@@ -17,4 +17,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: #0f0f0f;
   color: #f1f1f1;
+}
+
+/* Hide Instagram embed white line/border during loading */
+.instagram-media,
+.instagram-media-rendered {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.instagram-media iframe {
+  background: transparent !important;
 }

@@ -1,24 +1,20 @@
-import { useState, useEffect, useRef } from 'react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Moon, Sun, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { useParams, useNavigate } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
+import { Moon, Sun, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { InstagramEmbed } from './components/InstagramEmbed'
-import { ClassificationForm } from './components/ClassificationForm'
-import { usePost } from './hooks/usePost'
-import { useClassification, useCreateClassification, useUpdateClassification } from './hooks/useClassification'
+import { InstagramEmbed } from '../components/InstagramEmbed'
+import { ClassificationForm } from '../components/ClassificationForm'
+import { usePost } from '../hooks/usePost'
+import { useClassification, useCreateClassification, useUpdateClassification } from '../hooks/useClassification'
+import { api } from '../lib/api-client'
+import { useTheme } from '../context/ThemeContext'
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
-  },
-})
-
-function VideoClassifierContent() {
-  const [currentPostId, setCurrentPostId] = useState(1)
-  const [darkMode, setDarkMode] = useState(true)
+export function VideoClassifierPage() {
+  const navigate = useNavigate()
+  const { profileId, postId: initialPostId } = useParams({ from: '/profiles/$profileId/classify/$postId' })
+  const [currentPostId, setCurrentPostId] = useState(parseInt(initialPostId))
+  const { darkMode, setDarkMode, colors } = useTheme()
   const [showLoading, setShowLoading] = useState(false)
   const loadingTimeout = useRef(null)
   const [classification, setClassification] = useState({
@@ -27,6 +23,24 @@ function VideoClassifierContent() {
     trickRanking: 0,
     trickDifficulty: 0,
   })
+
+  // Fetch all videos for this profile to enable prev/next navigation
+  const { data: profileVideos } = useQuery({
+    queryKey: ['profile-videos', profileId],
+    queryFn: () => api.posts.getWithReviewStatus({ profileId, limit: 1000 }),
+    enabled: !!profileId,
+  })
+
+  // Get ordered list of post IDs for this profile
+  const postIds = useMemo(() => {
+    if (!profileVideos?.posts) return []
+    return profileVideos.posts.map(p => p.id)
+  }, [profileVideos])
+
+  // Find current index in the profile's video list
+  const currentIndex = useMemo(() => {
+    return postIds.indexOf(currentPostId)
+  }, [postIds, currentPostId])
 
   const { data: post, isLoading: postLoading } = usePost(currentPostId)
   const { data: existingClassification, isLoading: classificationLoading } = useClassification(currentPostId)
@@ -63,20 +77,35 @@ function VideoClassifierContent() {
     }
   }, [existingClassification, currentPostId])
 
+  const goToPrev = () => {
+    if (currentIndex > 0) {
+      const prevPostId = postIds[currentIndex - 1]
+      setCurrentPostId(prevPostId)
+      navigate({ to: '/profiles/$profileId/classify/$postId', params: { profileId, postId: prevPostId }, replace: true })
+    }
+  }
+
+  const goToNext = () => {
+    if (currentIndex < postIds.length - 1) {
+      const nextPostId = postIds[currentIndex + 1]
+      setCurrentPostId(nextPostId)
+      navigate({ to: '/profiles/$profileId/classify/$postId', params: { profileId, postId: nextPostId }, replace: true })
+    }
+  }
+
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'ArrowLeft' && currentPostId > 1) {
-        setCurrentPostId(prev => prev - 1)
+      if (e.key === 'ArrowLeft') {
+        goToPrev()
       } else if (e.key === 'ArrowRight') {
-        setCurrentPostId(prev => prev + 1)
+        goToNext()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [currentPostId])
+  }, [currentIndex, postIds])
 
   const handleSave = async () => {
-    // API expects camelCase
     const payload = {
       postId: currentPostId,
       isApproved: classification.isApproved,
@@ -91,75 +120,62 @@ function VideoClassifierContent() {
       } else {
         await createClassification.mutateAsync(payload)
       }
-      setCurrentPostId(prev => prev + 1)
+      goToNext()
     } catch (error) {
       console.error('Failed to save classification:', error)
     }
   }
 
   const isSaving = createClassification.isPending || updateClassification.isPending
-
-  const colors = darkMode
-    ? {
-        bg: 'bg-[#0f0f0f]',
-        bgSecondary: 'bg-[#181818]',
-        bgHover: 'hover:bg-[#272727]',
-        text: 'text-[#f1f1f1]',
-        textSecondary: 'text-[#aaaaaa]',
-        border: 'border-[#272727]',
-      }
-    : {
-        bg: 'bg-[#f9f9f9]',
-        bgSecondary: 'bg-white',
-        bgHover: 'hover:bg-[#f2f2f2]',
-        text: 'text-[#0f0f0f]',
-        textSecondary: 'text-[#606060]',
-        border: 'border-[#e5e5e5]',
-      }
+  const canGoPrev = currentIndex > 0
+  const canGoNext = currentIndex < postIds.length - 1
 
   return (
     <div className={`h-screen w-screen ${colors.bg} ${colors.text} flex flex-col`}>
-      {/* Header - YouTube style */}
       <header className={`h-14 flex-shrink-0 border-b ${colors.border} ${colors.bgSecondary}`}>
-        <div className="h-full px-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span className={`text-base font-semibold ${colors.text}`}>Video Classifier</span>
+        <div className="h-full px-3 md:px-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 md:gap-4">
+            <button
+              onClick={() => navigate({ to: '/profiles/$profileId', params: { profileId } })}
+              className={`p-2 rounded-lg transition-colors ${colors.bgHover}`}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <span className={`text-sm md:text-base font-semibold ${colors.text}`}>Video Classifier</span>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Navigation pill */}
-            <div className={`flex items-center ${darkMode ? 'bg-[#272727]' : 'bg-[#f2f2f2]'} rounded-full`}>
+          <div className="flex items-center gap-1 md:gap-2">
+            <div className={`flex items-center ${colors.bgTertiary} rounded-full`}>
               <button
-                onClick={() => setCurrentPostId(prev => Math.max(1, prev - 1))}
-                disabled={currentPostId <= 1}
-                className={`p-2 rounded-full transition-colors ${currentPostId <= 1 ? 'opacity-30 cursor-not-allowed' : colors.bgHover}`}
+                onClick={goToPrev}
+                disabled={!canGoPrev}
+                className={`p-1.5 md:p-2 rounded-full transition-colors ${!canGoPrev ? 'opacity-30 cursor-not-allowed' : colors.bgHover}`}
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
               </button>
-              <span className={`text-sm font-medium px-2 min-w-[60px] text-center ${colors.text}`}>
-                #{currentPostId}
+              <span className={`text-xs md:text-sm font-medium px-1 md:px-2 min-w-[50px] md:min-w-[60px] text-center ${colors.text}`}>
+                {currentIndex >= 0 ? `${currentIndex + 1}/${postIds.length}` : '...'}
               </span>
               <button
-                onClick={() => setCurrentPostId(prev => prev + 1)}
-                className={`p-2 rounded-full transition-colors ${colors.bgHover}`}
+                onClick={goToNext}
+                disabled={!canGoNext}
+                className={`p-1.5 md:p-2 rounded-full transition-colors ${!canGoNext ? 'opacity-30 cursor-not-allowed' : colors.bgHover}`}
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
               </button>
             </div>
 
-            {/* Theme toggle */}
             <button
               onClick={() => setDarkMode(!darkMode)}
-              className={`p-2 rounded-full transition-colors ${colors.bgHover}`}
+              className={`p-1.5 md:p-2 rounded-full transition-colors ${colors.bgHover}`}
             >
-              {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              {darkMode ? <Sun className="w-4 h-4 md:w-5 md:h-5" /> : <Moon className="w-4 h-4 md:w-5 md:h-5" />}
             </button>
           </div>
         </div>
       </header>
 
-      {/* Main */}
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 overflow-auto">
         <AnimatePresence mode="wait">
           {showLoading && isLoading ? (
             <motion.div
@@ -193,15 +209,15 @@ function VideoClassifierContent() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="h-full flex pt-20 items-start justify-center gap-8 px-8"
+              className="h-full flex flex-col lg:flex-row lg:pt-20 items-center lg:items-start justify-center gap-4 lg:gap-8 p-4 lg:px-8"
             >
-              {/* Video */}
-              <div className="flex-shrink-0">
+              {/* Video embed - full width on mobile, fixed size on desktop */}
+              <div className="flex-shrink-0 w-full max-w-[400px] lg:max-w-none lg:w-auto">
                 <InstagramEmbed postUrl={post.post_url} />
               </div>
 
-              {/* Classification */}
-              <div className="w-full max-w-md pt-20">
+              {/* Classification form */}
+              <div className="w-full max-w-md lg:pt-20">
                 <ClassificationForm
                   classification={classification}
                   onChange={setClassification}
@@ -215,13 +231,5 @@ function VideoClassifierContent() {
         </AnimatePresence>
       </main>
     </div>
-  )
-}
-
-export default function VideoClassifier() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <VideoClassifierContent />
-    </QueryClientProvider>
   )
 }

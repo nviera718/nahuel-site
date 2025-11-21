@@ -10,7 +10,7 @@ function StarRating({ value, onChange, label, darkMode }) {
   const emptyStarColor = darkMode ? 'text-[#404040] hover:text-[#666666]' : 'text-[#d0d0d0] hover:text-[#a0a0a0]'
 
   return (
-    <div className="flex items-center justify-between py-2">
+    <div className="flex items-center justify-between px-2">
       <span className={`text-sm ${labelColor}`}>{label}</span>
       <div className="flex items-center gap-1">
         {[1, 2, 3, 4, 5].map(star => (
@@ -63,8 +63,8 @@ export function ClassificationForm({ classification, onChange, onSave, isSaving,
       }
 
   return (
-    <div className={`${colors.cardBg} rounded-2xl p-6 border ${colors.cardBorder} ${colors.shadow}`}>
-      <h3 className={`text-lg font-semibold ${colors.text} mb-6`}>Classification</h3>
+    <div className={`${colors.cardBg} rounded-2xl p-10 border ${colors.cardBorder} ${colors.shadow}`}>
+      <h3 className={`text-lg font-semibold ${colors.text} mb-8`}>Classification</h3>
 
       {/* Approval Buttons */}
       <div className="grid grid-cols-2 gap-3 mb-6">
@@ -92,51 +92,8 @@ export function ClassificationForm({ classification, onChange, onSave, isSaving,
         </button>
       </div>
 
-      {/* Classification Form */}
-      <AnimatePresence mode="wait">
-        {classification.isApproved === true && (
-          <motion.div
-            key="form"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className={`space-y-2 pt-6 border-t ${colors.cardBorder} overflow-hidden`}
-          >
-            <div className="flex items-center justify-between py-2">
-              <span className={`text-sm ${colors.textSecondary}`}>Trick Type</span>
-              <select
-                value={classification.trickType}
-                onChange={(e) => onChange({ ...classification, trickType: e.target.value })}
-                className={`h-10 rounded-lg px-3 text-sm ${colors.inputBg} border ${colors.inputBorder} ${colors.inputText} focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all`}
-                style={{ backgroundColor: colors.optionBg }}
-              >
-                <option value="" style={{ backgroundColor: colors.optionBg }}>Select type...</option>
-                {TRICK_TYPES.map(type => (
-                  <option key={type} value={type} style={{ backgroundColor: colors.optionBg }}>{type}</option>
-                ))}
-              </select>
-            </div>
-
-            <StarRating
-              value={classification.trickRanking}
-              onChange={(value) => onChange({ ...classification, trickRanking: value })}
-              label="Ranking"
-              darkMode={darkMode}
-            />
-
-            <StarRating
-              value={classification.trickDifficulty}
-              onChange={(value) => onChange({ ...classification, trickDifficulty: value })}
-              label="Difficulty"
-              darkMode={darkMode}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Save Button */}
-      <div className={`mt-6 pt-6 border-t ${colors.cardBorder}`}>
+      {/* Save Button - always visible right after approval buttons */}
+      <div className="mt-6">
         <button
           className="w-full h-12 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
           onClick={onSave}
@@ -145,6 +102,51 @@ export function ClassificationForm({ classification, onChange, onSave, isSaving,
           {isSaving ? 'Saving...' : 'Save Classification'}
         </button>
       </div>
+
+      {/* Classification Form - expands below when approved */}
+      <AnimatePresence mode="wait">
+        {classification.isApproved === true && (
+          <motion.div
+            key="form"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className={`space-y-2 pt-6 mt-6 border-t ${colors.cardBorder}`}>
+              <div className="flex items-center justify-between py-2">
+                <span className={`text-sm ${colors.textSecondary}`}>Trick Type</span>
+                <select
+                  value={classification.trickType}
+                  onChange={(e) => onChange({ ...classification, trickType: e.target.value })}
+                  className={`h-10 rounded-lg px-3 text-sm ${colors.inputBg} border ${colors.inputBorder} ${colors.inputText} focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all`}
+                  style={{ backgroundColor: colors.optionBg }}
+                >
+                  <option value="" style={{ backgroundColor: colors.optionBg }}>Select type...</option>
+                  {TRICK_TYPES.map(type => (
+                    <option key={type} value={type} style={{ backgroundColor: colors.optionBg }}>{type}</option>
+                  ))}
+                </select>
+              </div>
+
+              <StarRating
+                value={classification.trickRanking}
+                onChange={(value) => onChange({ ...classification, trickRanking: value })}
+                label="Ranking"
+                darkMode={darkMode}
+              />
+
+              <StarRating
+                value={classification.trickDifficulty}
+                onChange={(value) => onChange({ ...classification, trickDifficulty: value })}
+                label="Difficulty"
+                darkMode={darkMode}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
