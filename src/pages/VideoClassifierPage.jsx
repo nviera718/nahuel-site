@@ -212,8 +212,8 @@ export function VideoClassifierPage() {
               transition={{ duration: 0.15 }}
               className="min-h-full flex flex-col lg:flex-row lg:pt-20 items-center lg:items-start lg:justify-center gap-4 lg:gap-8 p-4 lg:px-8"
             >
-              {/* Video embed - takes most of viewport on mobile */}
-              <div className="flex-shrink-0 w-full max-w-[400px] lg:max-w-none lg:w-auto min-h-[65vh] lg:min-h-0 flex items-center">
+              {/* Video embed */}
+              <div className="flex-shrink-0 w-full max-w-[400px] lg:max-w-none lg:w-auto pt-2">
                 <InstagramEmbed postUrl={post.post_url} />
               </div>
 
