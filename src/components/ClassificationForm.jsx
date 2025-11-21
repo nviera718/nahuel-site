@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Trash2, Check, Star } from 'lucide-react'
 
 const TRICK_TYPES = [
-  'Rail', 'Gap', 'Half Pipe', 'Ledge', 'Stairs', 'Manual', 'Flip Trick', 'Grind', 'Line', 'Other'
+  'Rail', 'Gap', 'Half Pipe', 'Ledge', 'Stairs', 'Manual', 'Flip Trick', 'Grind', 'Line', 'Hill Bomb', 'Other'
 ]
 
 function StarRating({ value, onChange, label, darkMode }) {
@@ -33,7 +33,7 @@ function StarRating({ value, onChange, label, darkMode }) {
   )
 }
 
-export function ClassificationForm({ classification, onChange, onSave, isSaving, darkMode = true }) {
+export function ClassificationForm({ classification, onChange, onSave, isSaving, darkMode = true, onClipVideo }) {
   const colors = darkMode
     ? {
         cardBg: 'bg-[#181818]',
@@ -127,19 +127,33 @@ export function ClassificationForm({ classification, onChange, onSave, isSaving,
             className="overflow-hidden"
           >
             <div className={`space-y-2 pt-6 mt-6 border-t ${colors.cardBorder}`}>
-              <div className="flex items-center justify-between py-2">
-                <span className={`text-sm ${colors.textSecondary}`}>Trick Type</span>
-                <select
-                  value={classification.trickType}
-                  onChange={(e) => onChange({ ...classification, trickType: e.target.value })}
-                  className={`h-10 rounded-lg px-3 text-sm ${colors.inputBg} border ${colors.inputBorder} ${colors.inputText} focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all`}
-                  style={{ backgroundColor: colors.optionBg }}
-                >
-                  <option value="" style={{ backgroundColor: colors.optionBg }}>Select type...</option>
-                  {TRICK_TYPES.map(type => (
-                    <option key={type} value={type} style={{ backgroundColor: colors.optionBg }}>{type}</option>
-                  ))}
-                </select>
+              <div className="py-2">
+                <span className={`text-sm ${colors.textSecondary} block mb-2`}>Trick Types</span>
+                <div className="flex flex-wrap gap-2">
+                  {TRICK_TYPES.map(type => {
+                    const isSelected = (classification.trickTypes || []).includes(type)
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => {
+                          const current = classification.trickTypes || []
+                          const updated = isSelected
+                            ? current.filter(t => t !== type)
+                            : [...current, type]
+                          onChange({ ...classification, trickTypes: updated })
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                          isSelected
+                            ? 'bg-blue-500 text-white'
+                            : `${colors.buttonBg} ${colors.buttonHover} ${colors.text}`
+                        }`}
+                      >
+                        {type}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
 
               <StarRating
@@ -183,6 +197,18 @@ export function ClassificationForm({ classification, onChange, onSave, isSaving,
                   </button>
                 </div>
               </div>
+
+              {classification.requiresClipping === true && onClipVideo && (
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={onClipVideo}
+                    className="w-full h-10 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold transition-all"
+                  >
+                    Clip Video →
+                  </button>
+                </div>
+              )}
             </div>
           </motion.div>
         )}

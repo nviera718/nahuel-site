@@ -3,6 +3,7 @@ import { RootLayout } from './layouts/RootLayout'
 import { HomePage } from './pages/HomePage'
 import { ProfileVideosPage } from './pages/ProfileVideosPage'
 import { VideoClassifierPage } from './pages/VideoClassifierPage'
+import { ClipVideoPage } from './pages/ClipVideoPage'
 import { WelcomePage } from './pages/WelcomePage'
 
 const rootRoute = createRootRoute({
@@ -33,11 +34,18 @@ const classifierRoute = createRoute({
   component: VideoClassifierPage,
 })
 
+const clipVideoRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/content-farm/$profileId/classify/$postId/clip',
+  component: ClipVideoPage,
+})
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   contentFarmRoute,
   profileVideosRoute,
   classifierRoute,
+  clipVideoRoute,
 ])
 
 export const router = createRouter({ routeTree })

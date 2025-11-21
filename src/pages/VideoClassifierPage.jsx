@@ -19,7 +19,7 @@ export function VideoClassifierPage() {
   const loadingTimeout = useRef(null)
   const [classification, setClassification] = useState({
     isApproved: null,
-    trickType: '',
+    trickTypes: [],
     trickRanking: 0,
     trickDifficulty: 0,
     requiresClipping: null,
@@ -65,7 +65,7 @@ export function VideoClassifierPage() {
     if (existingClassification) {
       setClassification({
         isApproved: existingClassification.is_approved,
-        trickType: existingClassification.trick_type || '',
+        trickTypes: existingClassification.trick_type || [],
         trickRanking: existingClassification.trick_ranking || 0,
         trickDifficulty: existingClassification.trick_difficulty || 0,
         requiresClipping: existingClassification.requires_clipping ?? null,
@@ -73,7 +73,7 @@ export function VideoClassifierPage() {
     } else {
       setClassification({
         isApproved: null,
-        trickType: '',
+        trickTypes: [],
         trickRanking: 0,
         trickDifficulty: 0,
         requiresClipping: null,
@@ -113,7 +113,7 @@ export function VideoClassifierPage() {
     const payload = {
       postId: currentPostId,
       isApproved: classification.isApproved,
-      trickType: classification.trickType || null,
+      trickTypes: classification.trickTypes?.length ? classification.trickTypes : null,
       trickRanking: classification.trickRanking || null,
       trickDifficulty: classification.trickDifficulty || null,
       requiresClipping: classification.requiresClipping,
@@ -237,6 +237,7 @@ export function VideoClassifierPage() {
                   onSave={handleSave}
                   isSaving={isSaving}
                   darkMode={darkMode}
+                  onClipVideo={() => navigate({ to: '/content-farm/$profileId/classify/$postId/clip', params: { profileId, postId: currentPostId } })}
                 />
               </div>
             </motion.div>
