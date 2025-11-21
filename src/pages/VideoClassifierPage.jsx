@@ -25,6 +25,8 @@ export function VideoClassifierPage() {
     requiresClipping: null,
   })
   const formRef = useRef(null)
+  const touchStartX = useRef(null)
+  const touchStartY = useRef(null)
 
   // Fetch all videos for this profile to enable prev/next navigation
   const { data: profileVideos } = useQuery({
@@ -109,6 +111,33 @@ export function VideoClassifierPage() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [currentIndex, postIds])
 
+  // Swipe gesture handlers
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }
+
+  const handleTouchEnd = (e) => {
+    if (touchStartX.current === null || touchStartY.current === null) return
+
+    const touchEndX = e.changedTouches[0].clientX
+    const touchEndY = e.changedTouches[0].clientY
+    const deltaX = touchEndX - touchStartX.current
+    const deltaY = touchEndY - touchStartY.current
+
+    // Only trigger if horizontal swipe is dominant and significant
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+      if (deltaX > 0) {
+        goToPrev() // Swipe right = previous
+      } else {
+        goToNext() // Swipe left = next
+      }
+    }
+
+    touchStartX.current = null
+    touchStartY.current = null
+  }
+
   const handleSave = async () => {
     const payload = {
       postId: currentPostId,
@@ -180,7 +209,11 @@ export function VideoClassifierPage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-auto">
+      <main
+        className="flex-1 overflow-auto"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         <AnimatePresence mode="wait">
           {showLoading && isLoading ? (
             <motion.div
@@ -218,7 +251,7 @@ export function VideoClassifierPage() {
             >
               {/* Video embed */}
               <div className="flex-shrink-0 w-full max-w-[400px] lg:max-w-none lg:w-auto pt-2">
-                <InstagramEmbed postUrl={post.post_url} />
+                <InstagramEmbed postUrl={post.post_url} darkMode={darkMode} />
               </div>
 
               {/* Classification form */}
