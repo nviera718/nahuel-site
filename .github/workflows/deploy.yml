@@ -32,5 +32,19 @@ jobs:
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
           SOURCE: "dist/"
-          TARGET: "/var/www/nahuelviera.dev/html"
+          TARGET: "/var/www/nahuelviera.dev"
           EXCLUDE: "/dist/, /node_modules/"
+
+      - name: Verify deployment
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Verify index.html exists
+            if [ ! -f /var/www/nahuelviera.dev/index.html ]; then
+              echo "Error: index.html not found in deployment directory"
+              exit 1
+            fi
+            echo "Deployment verified successfully"
