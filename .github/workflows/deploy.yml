@@ -32,7 +32,7 @@ jobs:
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
           SOURCE: "dist/"
-          TARGET: "/var/www/nahuelviera.dev"
+          TARGET: "/var/www/nahuelviera.dev/html"
           EXCLUDE: "/dist/, /node_modules/"
 
       - name: Verify deployment
@@ -43,7 +43,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             # Verify index.html exists
-            if [ ! -f /var/www/nahuelviera.dev/index.html ]; then
+            if [ ! -f /var/www/nahuelviera.dev/html/index.html ]; then
               echo "Error: index.html not found in deployment directory"
               exit 1
             fi
