@@ -15,6 +15,8 @@ export const api = {
   profiles: {
     getAll: (params) => apiClient.get('/profiles', { params }).then(res => res.data),
     getWithReviewStats: (params) => apiClient.get('/profiles/with-review-stats', { params }).then(res => res.data),
+    create: (data) => apiClient.post('/profiles', data).then(res => res.data),
+    delete: (id) => apiClient.delete(`/profiles/${id}`).then(res => res.data),
   },
   posts: {
     getById: (postId) => apiClient.get(`/posts?postId=${postId}`).then(res => res.data.posts[0]),
