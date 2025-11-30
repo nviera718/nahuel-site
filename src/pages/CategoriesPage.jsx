@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { Plus, FolderOpen, Moon, Sun, Trash2 } from 'lucide-react'
@@ -9,6 +9,13 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 function AddCategoryDialog({ isOpen, onClose, onSubmit, isLoading, error }) {
   const { colors } = useTheme()
   const [name, setName] = useState('')
+
+  // Clear input when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      setName('')
+    }
+  }, [isOpen])
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -38,7 +45,7 @@ function AddCategoryDialog({ isOpen, onClose, onSubmit, isLoading, error }) {
           <div className="flex justify-end gap-3">
             <button
               type="button"
-              onClick={() => { onClose(); setName(''); }}
+              onClick={onClose}
               disabled={isLoading}
               className={`px-4 py-2 ${colors.bgTertiary} ${colors.text} rounded-lg hover:opacity-80 transition-opacity disabled:opacity-50`}
             >
