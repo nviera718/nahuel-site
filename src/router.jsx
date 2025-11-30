@@ -20,12 +20,25 @@ const contentFarmRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/content-farm',
   component: HomePage,
+  validateSearch: (search) => ({
+    platform: search.platform || '',
+    postStatus: search.postStatus || '',
+    reviewStatus: search.reviewStatus || '',
+    q: search.q || '',
+    page: search.page || '',
+  }),
 })
 
 const profileVideosRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/content-farm/$profileId',
   component: ProfileVideosPage,
+  validateSearch: (search) => ({
+    status: search.status || '',
+    trickType: search.trickType || '',
+    videoUrl: search.videoUrl || '',
+    q: search.q || '',
+  }),
 })
 
 const classifierRoute = createRoute({

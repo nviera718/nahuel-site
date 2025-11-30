@@ -1,14 +1,13 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
-  getFilteredRowModel,
   flexRender,
 } from '@tanstack/react-table'
-import { ExternalLink, Search, ChevronUp, ChevronDown, Moon, Sun, Filter, X, Trash2, Plus } from 'lucide-react'
+import { ExternalLink, Search, ChevronUp, ChevronDown, Moon, Sun, Filter, X, Trash2, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { useTheme } from '../context/ThemeContext'
 import { Dropdown } from '../components/ui/Dropdown'
@@ -18,6 +17,7 @@ import { AddProfileDialog } from '../components/ui/AddProfileDialog'
 
 const STORAGE_KEY_PANEL = 'profiles_filter_panel_open'
 const STORAGE_KEY_FILTERS = 'profiles_filters'
+const PAGE_SIZE = 50
 
 const PLATFORM_OPTIONS = [
   { value: 'Instagram', label: 'Instagram' },
@@ -222,6 +222,7 @@ export function HomePage() {
   const { darkMode, setDarkMode, colors } = useTheme()
   const [sorting, setSorting] = useState([{ id: 'unreviewed_posts', desc: true }])
   const initializedRef = useRef(false)
+  const searchDebounceRef = useRef(null)
 
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -280,10 +281,12 @@ export function HomePage() {
   })
 
   // Local state for filters (synced with URL)
-  const [globalFilter, setGlobalFilterState] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [platformFilter, setPlatformFilterState] = useState([])
   const [postStatusFilter, setPostStatusFilterState] = useState('with_posts')
   const [reviewStatusFilter, setReviewStatusFilterState] = useState('all')
+  const [page, setPage] = useState(0)
 
   // Persist showFilters to localStorage
   useEffect(() => {
@@ -299,22 +302,26 @@ export function HomePage() {
     if (initializedRef.current) return
     initializedRef.current = true
 
-    const hasUrlFilters = Boolean(search.q || search.platform || search.postStatus || search.reviewStatus)
+    const hasUrlFilters = Boolean(search.q || search.platform || search.postStatus || search.reviewStatus || search.page)
 
     if (hasUrlFilters) {
       // Use URL params
-      setGlobalFilterState(search.q || '')
+      setSearchInput(search.q || '')
+      setDebouncedSearch(search.q || '')
       setPlatformFilterState(search.platform ? search.platform.split(',').filter(Boolean) : [])
       setPostStatusFilterState(search.postStatus || 'with_posts')
       setReviewStatusFilterState(search.reviewStatus || 'all')
+      setPage(parseInt(search.page) || 0)
     } else {
       // Try localStorage
       const stored = getStoredFilters()
       if (stored && Object.keys(stored).length > 0) {
-        setGlobalFilterState(stored.q || '')
+        setSearchInput(stored.q || '')
+        setDebouncedSearch(stored.q || '')
         setPlatformFilterState(stored.platform ? stored.platform.split(',').filter(Boolean) : [])
         setPostStatusFilterState(stored.postStatus || 'with_posts')
         setReviewStatusFilterState(stored.reviewStatus || 'all')
+        setPage(parseInt(stored.page) || 0)
         // Also update URL
         navigate({ to: '/content-farm', search: stored, replace: true })
       }
@@ -322,12 +329,13 @@ export function HomePage() {
   }, [])
 
   // Helper to build search object from current state
-  const buildSearchObject = (overrides = {}) => {
+  const buildSearchObject = useCallback((overrides = {}) => {
     const state = {
-      q: overrides.q !== undefined ? overrides.q : globalFilter,
+      q: overrides.q !== undefined ? overrides.q : debouncedSearch,
       platform: overrides.platform !== undefined ? overrides.platform : platformFilter,
       postStatus: overrides.postStatus !== undefined ? overrides.postStatus : postStatusFilter,
       reviewStatus: overrides.reviewStatus !== undefined ? overrides.reviewStatus : reviewStatusFilter,
+      page: overrides.page !== undefined ? overrides.page : page,
     }
 
     const newSearch = {}
@@ -335,59 +343,68 @@ export function HomePage() {
     if (state.platform.length > 0) newSearch.platform = state.platform.join(',')
     if (state.postStatus !== 'with_posts') newSearch.postStatus = state.postStatus
     if (state.reviewStatus !== 'all') newSearch.reviewStatus = state.reviewStatus
+    if (state.page > 0) newSearch.page = state.page
 
     return newSearch
-  }
+  }, [debouncedSearch, platformFilter, postStatusFilter, reviewStatusFilter, page])
 
   // Update URL and localStorage when filters change
-  const syncToUrl = (newSearch) => {
+  const syncToUrl = useCallback((newSearch) => {
     saveFilters(newSearch)
     navigate({ to: '/content-farm', search: newSearch, replace: true })
+  }, [navigate])
+
+  // Debounced search handler
+  const handleSearchChange = (value) => {
+    setSearchInput(value)
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current)
+    }
+    searchDebounceRef.current = setTimeout(() => {
+      setDebouncedSearch(value)
+      setPage(0) // Reset to first page on search
+      syncToUrl(buildSearchObject({ q: value, page: 0 }))
+    }, 300)
   }
 
-  const setGlobalFilter = (value) => {
-    setGlobalFilterState(value)
-    syncToUrl(buildSearchObject({ q: value }))
-  }
   const setPlatformFilter = (value) => {
     setPlatformFilterState(value)
-    syncToUrl(buildSearchObject({ platform: value }))
+    setPage(0)
+    syncToUrl(buildSearchObject({ platform: value, page: 0 }))
   }
   const setPostStatusFilter = (value) => {
     setPostStatusFilterState(value)
-    syncToUrl(buildSearchObject({ postStatus: value }))
+    setPage(0)
+    syncToUrl(buildSearchObject({ postStatus: value, page: 0 }))
   }
   const setReviewStatusFilter = (value) => {
     setReviewStatusFilterState(value)
-    syncToUrl(buildSearchObject({ reviewStatus: value }))
+    setPage(0)
+    syncToUrl(buildSearchObject({ reviewStatus: value, page: 0 }))
   }
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['profiles-with-stats'],
-    queryFn: () => api.profiles.getWithReviewStats(),
+  // Build API params from filter state
+  const apiParams = useMemo(() => {
+    const params = {
+      limit: PAGE_SIZE,
+      offset: page * PAGE_SIZE,
+    }
+    if (debouncedSearch) params.search = debouncedSearch
+    if (platformFilter.length > 0) params.platform = platformFilter.join(',')
+    if (postStatusFilter !== 'all') params.postStatus = postStatusFilter
+    if (reviewStatusFilter !== 'all') params.reviewStatus = reviewStatusFilter
+    return params
+  }, [debouncedSearch, platformFilter, postStatusFilter, reviewStatusFilter, page])
+
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ['profiles-with-stats', apiParams],
+    queryFn: () => api.profiles.getWithReviewStats(apiParams),
+    keepPreviousData: true,
   })
 
-  const filteredData = useMemo(() => {
-    if (!data?.profiles) return []
-
-    return data.profiles.filter(profile => {
-      const totalPosts = parseInt(profile.total_posts) || 0
-      const unreviewedPosts = parseInt(profile.unreviewed_posts) || 0
-
-      // Post status filter
-      if (postStatusFilter === 'with_posts' && totalPosts === 0) return false
-      if (postStatusFilter === 'without_posts' && totalPosts > 0) return false
-
-      // Platform filter
-      if (platformFilter.length > 0 && !platformFilter.includes(profile.platform)) return false
-
-      // Review status filter
-      if (reviewStatusFilter === 'has_unreviewed' && unreviewedPosts === 0) return false
-      if (reviewStatusFilter === 'fully_reviewed' && unreviewedPosts > 0) return false
-
-      return true
-    })
-  }, [data, platformFilter, postStatusFilter, reviewStatusFilter])
+  const profiles = data?.profiles || []
+  const totalCount = data?.total || 0
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE)
 
   const activeFilterCount = [
     platformFilter.length > 0,
@@ -396,31 +413,37 @@ export function HomePage() {
   ].filter(Boolean).length
 
   const clearFilters = () => {
-    setGlobalFilterState('')
+    setSearchInput('')
+    setDebouncedSearch('')
     setPlatformFilterState([])
     setPostStatusFilterState('with_posts')
     setReviewStatusFilterState('all')
+    setPage(0)
     saveFilters({})
     navigate({ to: '/content-farm', search: {}, replace: true })
+  }
+
+  const goToPage = (newPage) => {
+    setPage(newPage)
+    syncToUrl(buildSearchObject({ page: newPage }))
   }
 
   const columns = useMemo(() => createColumns(handleDeleteClick), [])
 
   const table = useReactTable({
-    data: filteredData,
+    data: profiles,
     columns,
     state: {
       sorting,
-      globalFilter,
     },
     onSortingChange: setSorting,
-    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
+    manualPagination: true,
+    manualFiltering: true,
   })
 
-  const filteredRows = table.getRowModel().rows
+  const rows = table.getRowModel().rows
 
   return (
     <div className={`h-screen ${colors.bg} ${colors.text} flex flex-col`}>
@@ -447,8 +470,8 @@ export function HomePage() {
                   <input
                     type="text"
                     placeholder="Search profiles..."
-                    value={globalFilter}
-                    onChange={(e) => setGlobalFilter(e.target.value)}
+                    value={searchInput}
+                    onChange={(e) => handleSearchChange(e.target.value)}
                     className={`w-full sm:w-64 pl-9 pr-4 py-2 ${colors.bgTertiary} border ${colors.border} rounded-lg text-sm ${colors.text} placeholder:${colors.textMuted} focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500`}
                   />
                 </div>
@@ -524,7 +547,7 @@ export function HomePage() {
             <>
               {/* Mobile: Card view */}
               <div className="flex-1 overflow-auto md:hidden space-y-3">
-                {filteredRows.map(row => (
+                {rows.map(row => (
                   <ProfileCard
                     key={row.id}
                     profile={row.original}
@@ -533,9 +556,9 @@ export function HomePage() {
                     onDelete={handleDeleteClick}
                   />
                 ))}
-                {filteredRows.length === 0 && (
+                {rows.length === 0 && (
                   <div className={`py-12 text-center ${colors.textSecondary}`}>
-                    {globalFilter || activeFilterCount > 0 ? 'No profiles match your filters' : 'No profiles found'}
+                    {searchInput || activeFilterCount > 0 ? 'No profiles match your filters' : 'No profiles found'}
                   </div>
                 )}
               </div>
@@ -568,7 +591,7 @@ export function HomePage() {
                       ))}
                     </thead>
                     <tbody>
-                      {filteredRows.map(row => (
+                      {rows.map(row => (
                         <tr
                           key={row.id}
                           className={`border-b ${colors.border} last:border-0 ${colors.bgHover} cursor-pointer transition-colors`}
@@ -584,13 +607,42 @@ export function HomePage() {
                     </tbody>
                   </table>
 
-                  {filteredRows.length === 0 && (
+                  {rows.length === 0 && (
                     <div className={`py-12 text-center ${colors.textSecondary}`}>
-                      {globalFilter || activeFilterCount > 0 ? 'No profiles match your filters' : 'No profiles found'}
+                      {searchInput || activeFilterCount > 0 ? 'No profiles match your filters' : 'No profiles found'}
                     </div>
                   )}
                 </div>
               </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className={`flex items-center justify-between mt-4 px-2`}>
+                  <div className={`text-sm ${colors.textSecondary}`}>
+                    Showing {page * PAGE_SIZE + 1}-{Math.min((page + 1) * PAGE_SIZE, totalCount)} of {totalCount}
+                    {isFetching && <span className="ml-2 opacity-50">Loading...</span>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => goToPage(page - 1)}
+                      disabled={page === 0}
+                      className={`p-2 ${colors.bgTertiary} border ${colors.border} rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:${colors.bgHover}`}
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className={`text-sm ${colors.textSecondary} tabular-nums`}>
+                      Page {page + 1} of {totalPages}
+                    </span>
+                    <button
+                      onClick={() => goToPage(page + 1)}
+                      disabled={page >= totalPages - 1}
+                      className={`p-2 ${colors.bgTertiary} border ${colors.border} rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:${colors.bgHover}`}
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
