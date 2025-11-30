@@ -12,6 +12,13 @@ export const apiClient = axios.create({
 
 // API endpoints
 export const api = {
+  categories: {
+    getAll: () => apiClient.get('/categories').then(res => res.data),
+    getBySlug: (slug) => apiClient.get(`/categories/${slug}`).then(res => res.data),
+    create: (data) => apiClient.post('/categories', data).then(res => res.data),
+    update: (id, data) => apiClient.put(`/categories/${id}`, data).then(res => res.data),
+    delete: (id) => apiClient.delete(`/categories/${id}`).then(res => res.data),
+  },
   profiles: {
     getAll: (params) => apiClient.get('/profiles', { params }).then(res => res.data),
     getWithReviewStats: (params) => apiClient.get('/profiles/with-review-stats', { params }).then(res => res.data),

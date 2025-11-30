@@ -1,5 +1,6 @@
 import { createRouter, createRoute, createRootRoute } from '@tanstack/react-router'
 import { RootLayout } from './layouts/RootLayout'
+import { CategoriesPage } from './pages/CategoriesPage'
 import { HomePage } from './pages/HomePage'
 import { ProfileVideosPage } from './pages/ProfileVideosPage'
 import { VideoClassifierPage } from './pages/VideoClassifierPage'
@@ -16,9 +17,17 @@ const indexRoute = createRoute({
   component: WelcomePage,
 })
 
-const contentFarmRoute = createRoute({
+// Categories landing page
+const categoriesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/content-farm',
+  component: CategoriesPage,
+})
+
+// Profiles page (within a category)
+const categoryProfilesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/content-farm/$categorySlug',
   component: HomePage,
   validateSearch: (search) => ({
     platform: search.platform || '',
@@ -31,7 +40,7 @@ const contentFarmRoute = createRoute({
 
 const profileVideosRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/content-farm/$profileId',
+  path: '/content-farm/$categorySlug/$profileId',
   component: ProfileVideosPage,
   validateSearch: (search) => ({
     status: search.status || '',
@@ -43,19 +52,20 @@ const profileVideosRoute = createRoute({
 
 const classifierRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/content-farm/$profileId/classify/$postId',
+  path: '/content-farm/$categorySlug/$profileId/classify/$postId',
   component: VideoClassifierPage,
 })
 
 const clipVideoRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/content-farm/$profileId/classify/$postId/clip',
+  path: '/content-farm/$categorySlug/$profileId/classify/$postId/clip',
   component: ClipVideoPage,
 })
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
-  contentFarmRoute,
+  categoriesRoute,
+  categoryProfilesRoute,
   profileVideosRoute,
   classifierRoute,
   clipVideoRoute,

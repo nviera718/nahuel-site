@@ -5,7 +5,7 @@ import { useTheme } from '../context/ThemeContext'
 
 export function ClipVideoPage() {
   const navigate = useNavigate()
-  const { profileId, postId } = useParams({ from: '/content-farm/$profileId/classify/$postId/clip' })
+  const { categorySlug, profileId, postId } = useParams({ from: '/content-farm/$categorySlug/$profileId/classify/$postId/clip' })
   const { darkMode, setDarkMode, colors } = useTheme()
   const { data: post, isLoading } = usePost(postId)
 
@@ -15,7 +15,7 @@ export function ClipVideoPage() {
         <div className="h-full px-3 md:px-4 flex items-center justify-between">
           <div className="flex items-center gap-2 md:gap-4">
             <button
-              onClick={() => navigate({ to: '/content-farm/$profileId/classify/$postId', params: { profileId, postId } })}
+              onClick={() => navigate({ to: '/content-farm/$categorySlug/$profileId/classify/$postId', params: { categorySlug, profileId, postId } })}
               className={`p-2 rounded-lg transition-colors ${colors.bgHover}`}
             >
               <ArrowLeft className="w-5 h-5" />

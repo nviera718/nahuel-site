@@ -12,7 +12,7 @@ import { useTheme } from '../context/ThemeContext'
 
 export function VideoClassifierPage() {
   const navigate = useNavigate()
-  const { profileId, postId: initialPostId } = useParams({ from: '/content-farm/$profileId/classify/$postId' })
+  const { categorySlug, profileId, postId: initialPostId } = useParams({ from: '/content-farm/$categorySlug/$profileId/classify/$postId' })
   const [currentPostId, setCurrentPostId] = useState(parseInt(initialPostId))
   const { darkMode, setDarkMode, colors } = useTheme()
   const [showLoading, setShowLoading] = useState(false)
@@ -85,7 +85,7 @@ export function VideoClassifierPage() {
     if (currentIndex > 0) {
       const prevPostId = postIds[currentIndex - 1]
       setCurrentPostId(prevPostId)
-      navigate({ to: '/content-farm/$profileId/classify/$postId', params: { profileId, postId: prevPostId }, replace: true })
+      navigate({ to: '/content-farm/$categorySlug/$profileId/classify/$postId', params: { categorySlug, profileId, postId: prevPostId }, replace: true })
     }
   }
 
@@ -93,7 +93,7 @@ export function VideoClassifierPage() {
     if (currentIndex < postIds.length - 1) {
       const nextPostId = postIds[currentIndex + 1]
       setCurrentPostId(nextPostId)
-      navigate({ to: '/content-farm/$profileId/classify/$postId', params: { profileId, postId: nextPostId }, replace: true })
+      navigate({ to: '/content-farm/$categorySlug/$profileId/classify/$postId', params: { categorySlug, profileId, postId: nextPostId }, replace: true })
     }
   }
 
@@ -155,7 +155,7 @@ export function VideoClassifierPage() {
         <div className="h-full px-3 md:px-4 flex items-center justify-between">
           <div className="flex items-center gap-2 md:gap-4">
             <button
-              onClick={() => navigate({ to: '/content-farm/$profileId', params: { profileId } })}
+              onClick={() => navigate({ to: '/content-farm/$categorySlug/$profileId', params: { categorySlug, profileId } })}
               className={`p-2 rounded-lg transition-colors ${colors.bgHover}`}
             >
               <ArrowLeft className="w-5 h-5" />
@@ -293,7 +293,7 @@ export function VideoClassifierPage() {
                   onSave={handleSave}
                   isSaving={isSaving}
                   darkMode={darkMode}
-                  onClipVideo={() => navigate({ to: '/content-farm/$profileId/classify/$postId/clip', params: { profileId, postId: currentPostId } })}
+                  onClipVideo={() => navigate({ to: '/content-farm/$categorySlug/$profileId/classify/$postId/clip', params: { categorySlug, profileId, postId: currentPostId } })}
                 />
               </div>
             </motion.div>

@@ -1,13 +1,13 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate, useSearch } from '@tanstack/react-router'
+import { useNavigate, useSearch, useParams } from '@tanstack/react-router'
 import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
   flexRender,
 } from '@tanstack/react-table'
-import { ExternalLink, Search, ChevronUp, ChevronDown, Moon, Sun, Filter, X, Trash2, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ExternalLink, Search, ChevronUp, ChevronDown, Moon, Sun, Filter, X, Trash2, Plus, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { useTheme } from '../context/ThemeContext'
 import { Dropdown } from '../components/ui/Dropdown'
@@ -217,12 +217,20 @@ function saveFilters(filters) {
 
 export function HomePage() {
   const navigate = useNavigate()
-  const search = useSearch({ from: '/content-farm' })
+  const { categorySlug } = useParams({ from: '/content-farm/$categorySlug' })
+  const search = useSearch({ from: '/content-farm/$categorySlug' })
   const queryClient = useQueryClient()
   const { darkMode, setDarkMode, colors } = useTheme()
   const [sorting, setSorting] = useState([{ id: 'unreviewed_posts', desc: true }])
   const initializedRef = useRef(false)
   const searchDebounceRef = useRef(null)
+
+  // Fetch category info
+  const { data: categoryData } = useQuery({
+    queryKey: ['category', categorySlug],
+    queryFn: () => api.categories.getBySlug(categorySlug),
+  })
+  const category = categoryData?.category
 
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -236,7 +244,7 @@ export function HomePage() {
   const deleteMutation = useMutation({
     mutationFn: (id) => api.profiles.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profiles-with-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['profiles-with-stats', categorySlug] })
       setDeleteDialogOpen(false)
       setProfileToDelete(null)
     },
@@ -244,9 +252,10 @@ export function HomePage() {
 
   // Create mutation
   const createMutation = useMutation({
-    mutationFn: (profileUrl) => api.profiles.create({ profile_url: profileUrl }),
+    mutationFn: (profileUrl) => api.profiles.create({ profile_url: profileUrl, category_id: category?.id }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profiles-with-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['profiles-with-stats', categorySlug] })
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
       setAddDialogOpen(false)
       setAddError(null)
     },
@@ -267,6 +276,10 @@ export function HomePage() {
   }
 
   const handleAddProfile = (url) => {
+    if (!category?.id) {
+      setAddError('Category not loaded. Please try again.')
+      return
+    }
     setAddError(null)
     createMutation.mutate(url)
   }
@@ -323,10 +336,10 @@ export function HomePage() {
         setReviewStatusFilterState(stored.reviewStatus || 'all')
         setPage(parseInt(stored.page) || 0)
         // Also update URL
-        navigate({ to: '/content-farm', search: stored, replace: true })
+        navigate({ to: '/content-farm/$categorySlug', params: { categorySlug }, search: stored, replace: true })
       }
     }
-  }, [])
+  }, [categorySlug])
 
   // Helper to build search object from current state
   const buildSearchObject = useCallback((overrides = {}) => {
@@ -351,8 +364,8 @@ export function HomePage() {
   // Update URL and localStorage when filters change
   const syncToUrl = useCallback((newSearch) => {
     saveFilters(newSearch)
-    navigate({ to: '/content-farm', search: newSearch, replace: true })
-  }, [navigate])
+    navigate({ to: '/content-farm/$categorySlug', params: { categorySlug }, search: newSearch, replace: true })
+  }, [navigate, categorySlug])
 
   // Debounced search handler
   const handleSearchChange = (value) => {
@@ -386,6 +399,7 @@ export function HomePage() {
   // Build API params from filter state
   const apiParams = useMemo(() => {
     const params = {
+      category: categorySlug,
       limit: PAGE_SIZE,
       offset: page * PAGE_SIZE,
     }
@@ -394,10 +408,10 @@ export function HomePage() {
     if (postStatusFilter !== 'all') params.postStatus = postStatusFilter
     if (reviewStatusFilter !== 'all') params.reviewStatus = reviewStatusFilter
     return params
-  }, [debouncedSearch, platformFilter, postStatusFilter, reviewStatusFilter, page])
+  }, [categorySlug, debouncedSearch, platformFilter, postStatusFilter, reviewStatusFilter, page])
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['profiles-with-stats', apiParams],
+    queryKey: ['profiles-with-stats', categorySlug, apiParams],
     queryFn: () => api.profiles.getWithReviewStats(apiParams),
     keepPreviousData: true,
   })
@@ -420,7 +434,7 @@ export function HomePage() {
     setReviewStatusFilterState('all')
     setPage(0)
     saveFilters({})
-    navigate({ to: '/content-farm', search: {}, replace: true })
+    navigate({ to: '/content-farm/$categorySlug', params: { categorySlug }, search: {}, replace: true })
   }
 
   const goToPage = (newPage) => {
@@ -449,7 +463,15 @@ export function HomePage() {
     <div className={`h-screen ${colors.bg} ${colors.text} flex flex-col`}>
       <header className={`h-14 flex-shrink-0 border-b ${colors.border} ${colors.bgSecondary}`}>
         <div className="h-full px-4 md:px-6 flex items-center justify-between">
-          <span className="text-base font-semibold">Video Classifier</span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate({ to: '/content-farm' })}
+              className={`p-2 rounded-full transition-colors ${colors.bgHover}`}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <span className="text-base font-semibold">{category?.name || 'Profiles'}</span>
+          </div>
           <button
             onClick={() => setDarkMode(!darkMode)}
             className={`p-2 rounded-full transition-colors ${colors.bgHover}`}
@@ -488,7 +510,8 @@ export function HomePage() {
                 </button>
                 <button
                   onClick={() => setAddDialogOpen(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                  disabled={!category}
+                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus className="w-4 h-4" />
                   <span className="hidden sm:inline">Add Profile</span>
@@ -552,7 +575,7 @@ export function HomePage() {
                     key={row.id}
                     profile={row.original}
                     colors={colors}
-                    onClick={() => navigate({ to: '/content-farm/$profileId', params: { profileId: row.original.id } })}
+                    onClick={() => navigate({ to: '/content-farm/$categorySlug/$profileId', params: { categorySlug, profileId: row.original.id } })}
                     onDelete={handleDeleteClick}
                   />
                 ))}
@@ -595,7 +618,7 @@ export function HomePage() {
                         <tr
                           key={row.id}
                           className={`border-b ${colors.border} last:border-0 ${colors.bgHover} cursor-pointer transition-colors`}
-                          onClick={() => navigate({ to: '/content-farm/$profileId', params: { profileId: row.original.id } })}
+                          onClick={() => navigate({ to: '/content-farm/$categorySlug/$profileId', params: { categorySlug, profileId: row.original.id } })}
                         >
                           {row.getVisibleCells().map(cell => (
                             <td key={cell.id} className="px-4 py-3">
