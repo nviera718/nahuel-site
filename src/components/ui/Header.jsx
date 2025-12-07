@@ -3,6 +3,7 @@ import { useTheme } from '../../context/ThemeContext'
 import { Breadcrumb } from './Breadcrumb'
 import { ScrapeQueuePopover } from './ScrapeQueuePopover'
 import { StorageIndicator } from './StorageIndicator'
+import { UserProfilePopover } from './UserProfilePopover'
 
 /**
  * Consolidated Header component for all pages
@@ -23,6 +24,9 @@ export function Header({
 }) {
   const { colors, darkMode, setDarkMode } = useTheme()
 
+  // Check if we're on a content-farm route
+  const isContentFarmRoute = window.location.pathname.startsWith('/content-farm')
+
   return (
     <header className={`h-14 flex-shrink-0 border-b ${colors.border} ${colors.bgSecondary}`}>
       <div className="h-full px-4 md:px-6 flex items-center justify-between">
@@ -39,6 +43,9 @@ export function Header({
 
           {/* Scrape queue */}
           {showQueue && <ScrapeQueuePopover />}
+
+          {/* User profile popover (only on content-farm routes) */}
+          {isContentFarmRoute && <UserProfilePopover />}
 
           {/* Theme toggle */}
           {showThemeToggle && (
