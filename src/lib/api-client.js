@@ -41,6 +41,7 @@ export const api = {
     getAll: (params) => apiClient.get('/queue', { params }).then(res => res.data),
     remove: (queueId) => apiClient.delete(`/queue/${queueId}`).then(res => res.data),
     clear: (data) => apiClient.post('/queue/clear', data).then(res => res.data),
+    clearPending: () => apiClient.delete('/queue/clear-pending').then(res => res.data),
   },
   scrape: {
     trigger: (data) => apiClient.post('/scrape/trigger', data).then(res => res.data),

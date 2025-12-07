@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
-import { ListOrdered, X, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
+import { ListOrdered, X, Trash2, ChevronDown, ChevronUp, Play, Trash } from 'lucide-react'
 import { api } from '../../lib/api-client'
 import { useTheme } from '../../context/ThemeContext'
 import { ConfirmDialog } from './ConfirmDialog'
@@ -16,6 +16,9 @@ export function ScrapeQueuePopover() {
   // Remove confirmation dialog state
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
   const [itemToRemove, setItemToRemove] = useState(null)
+
+  // Remove all confirmation dialog state
+  const [removeAllDialogOpen, setRemoveAllDialogOpen] = useState(false)
 
   // Use WebSocket for real-time stats
   const { queue, recentItems, isConnected } = useWebSocketStats()
@@ -36,6 +39,21 @@ export function ScrapeQueuePopover() {
     },
   })
 
+  const scrapeMutation = useMutation({
+    mutationFn: () => api.scrape.trigger({ maxItems: 10 }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scrapeQueue'] })
+    },
+  })
+
+  const clearPendingMutation = useMutation({
+    mutationFn: () => api.queue.clearPending(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scrapeQueue'] })
+      setRemoveAllDialogOpen(false)
+    },
+  })
+
   const handleRemoveClick = (item) => {
     setItemToRemove(item)
     setRemoveDialogOpen(true)
@@ -45,6 +63,18 @@ export function ScrapeQueuePopover() {
     if (itemToRemove) {
       removeMutation.mutate(itemToRemove.id)
     }
+  }
+
+  const handleScrapeClick = () => {
+    scrapeMutation.mutate()
+  }
+
+  const handleRemoveAllClick = () => {
+    setRemoveAllDialogOpen(true)
+  }
+
+  const handleConfirmRemoveAll = () => {
+    clearPendingMutation.mutate()
   }
 
   // Close popover when clicking outside
@@ -98,6 +128,40 @@ export function ScrapeQueuePopover() {
               className={`p-1 rounded transition-colors ${colors.bgHover}`}
             >
               <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Action Buttons */}
+          <div className={`p-3 border-b ${colors.border} flex gap-2 flex-shrink-0`}>
+            <button
+              onClick={handleScrapeClick}
+              disabled={scrapeMutation.isPending || pendingCount === 0}
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded transition-colors ${
+                pendingCount > 0 && !scrapeMutation.isPending
+                  ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                  : 'bg-gray-500/20 text-gray-400 cursor-not-allowed'
+              }`}
+              title={pendingCount === 0 ? 'No pending items to scrape' : 'Start scraping pending items'}
+            >
+              <Play className="w-4 h-4" />
+              <span className="text-sm font-medium">
+                {scrapeMutation.isPending ? 'Starting...' : 'Scrape'}
+              </span>
+            </button>
+            <button
+              onClick={handleRemoveAllClick}
+              disabled={clearPendingMutation.isPending || pendingCount === 0}
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded transition-colors ${
+                pendingCount > 0 && !clearPendingMutation.isPending
+                  ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400'
+                  : 'bg-gray-500/20 text-gray-400 cursor-not-allowed'
+              }`}
+              title={pendingCount === 0 ? 'No pending items to remove' : 'Remove all pending items'}
+            >
+              <Trash className="w-4 h-4" />
+              <span className="text-sm font-medium">
+                {clearPendingMutation.isPending ? 'Removing...' : 'Remove All'}
+              </span>
             </button>
           </div>
 
@@ -220,6 +284,16 @@ export function ScrapeQueuePopover() {
         }
         confirmText="Remove"
         isLoading={removeMutation.isPending}
+      />
+
+      <ConfirmDialog
+        isOpen={removeAllDialogOpen}
+        onClose={() => setRemoveAllDialogOpen(false)}
+        onConfirm={handleConfirmRemoveAll}
+        title="Remove All Pending Items"
+        message={`Remove all ${pendingCount} pending items from the scrape queue? This action cannot be undone.`}
+        confirmText="Remove All"
+        isLoading={clearPendingMutation.isPending}
       />
     </div>
   )
