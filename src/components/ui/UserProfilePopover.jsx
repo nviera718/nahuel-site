@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
-import { useAuth0 } from '@auth0/auth0-react'
 import { User, LogOut, X } from 'lucide-react'
 import { useTheme } from '../../context/ThemeContext'
+import { useAuth } from '../../hooks/useAuth'
 
 export function UserProfilePopover() {
   const [isOpen, setIsOpen] = useState(false)
   const popoverRef = useRef(null)
   const { colors } = useTheme()
-  const { user, isAuthenticated, isLoading, logout } = useAuth0()
+  const { user, isAuthenticated, isLoading, logout, roles } = useAuth()
 
   // Close popover when clicking outside
   useEffect(() => {
@@ -95,6 +95,30 @@ export function UserProfilePopover() {
                 </div>
               </div>
             </div>
+
+            {/* Roles Display (Debug) */}
+            {roles && roles.length > 0 && (
+              <div className="mb-4">
+                <div className={`text-xs font-semibold ${colors.textSecondary} mb-2`}>
+                  Roles ({roles.length})
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {roles.map((role, index) => (
+                    <span
+                      key={index}
+                      className={`text-xs px-2 py-1 rounded ${colors.bgTertiary} ${colors.text}`}
+                    >
+                      {role}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {(!roles || roles.length === 0) && (
+              <div className="mb-4 p-2 bg-yellow-500/20 border border-yellow-500/30 rounded text-xs text-yellow-400">
+                ⚠️ No roles detected. Check Auth0 Action setup.
+              </div>
+            )}
 
             {/* Logout Button */}
             <button
