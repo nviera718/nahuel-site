@@ -14,7 +14,7 @@ export function ProductionPage() {
 
   return (
     <div className={`h-screen ${colors.bg} ${colors.text} flex flex-col`}>
-      <Header breadcrumbItems={breadcrumbItems}>
+      <Header breadcrumbItems={breadcrumbItems} showUserProfile={true}>
         <button
           onClick={() => navigate({ to: '/content-farm' })}
           className={`p-2 rounded-full transition-colors ${colors.bgHover}`}

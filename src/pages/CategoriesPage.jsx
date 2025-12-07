@@ -169,7 +169,7 @@ export function CategoriesPage() {
 
   return (
     <div className={`h-screen ${colors.bg} ${colors.text} flex flex-col`}>
-      <Header breadcrumbItems={breadcrumbItems} />
+      <Header breadcrumbItems={breadcrumbItems} showUserProfile={true} />
 
       <main className="flex-1 overflow-auto p-4 md:p-6">
         <div className="max-w-4xl mx-auto">

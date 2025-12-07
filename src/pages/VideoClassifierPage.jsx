@@ -292,7 +292,7 @@ export function VideoClassifierPage() {
 
   return (
     <div className={`h-screen w-screen ${colors.bg} ${colors.text} flex flex-col`}>
-      <Header breadcrumbItems={breadcrumbItems}>
+      <Header breadcrumbItems={breadcrumbItems} showUserProfile={true}>
         <div className={`flex items-center ${colors.bgTertiary} rounded-full`}>
           <button
             onClick={goToPrev}

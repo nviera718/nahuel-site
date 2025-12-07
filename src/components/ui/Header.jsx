@@ -13,6 +13,7 @@ import { UserProfilePopover } from './UserProfilePopover'
  * @param {React.ReactNode} props.children - Additional toolbar items to render (page-specific)
  * @param {boolean} props.showQueue - Show scrape queue popover (default: true)
  * @param {boolean} props.showStorage - Show storage indicator (default: true)
+ * @param {boolean} props.showUserProfile - Show user profile popover (default: false)
  * @param {boolean} props.showThemeToggle - Show theme toggle (default: true)
  */
 export function Header({
@@ -20,12 +21,10 @@ export function Header({
   children,
   showQueue = true,
   showStorage = true,
+  showUserProfile = false,
   showThemeToggle = true
 }) {
   const { colors, darkMode, setDarkMode } = useTheme()
-
-  // Check if we're on a content-farm route
-  const isContentFarmRoute = window.location.pathname.startsWith('/content-farm')
 
   return (
     <header className={`h-14 flex-shrink-0 border-b ${colors.border} ${colors.bgSecondary}`}>
@@ -35,18 +34,6 @@ export function Header({
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Page-specific toolbar items */}
-          {children}
-
-          {/* Storage indicator */}
-          {showStorage && <StorageIndicator />}
-
-          {/* Scrape queue */}
-          {showQueue && <ScrapeQueuePopover />}
-
-          {/* User profile popover (only on content-farm routes) */}
-          {isContentFarmRoute && <UserProfilePopover />}
-
           {/* Theme toggle */}
           {showThemeToggle && (
             <button
@@ -56,6 +43,18 @@ export function Header({
               {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
           )}
+
+          {/* Page-specific toolbar items */}
+          {children}
+
+          {/* Storage indicator */}
+          {showStorage && <StorageIndicator />}
+
+          {/* Scrape queue */}
+          {showQueue && <ScrapeQueuePopover />}
+
+          {/* User profile popover */}
+          {showUserProfile && <UserProfilePopover />}
         </div>
       </div>
     </header>

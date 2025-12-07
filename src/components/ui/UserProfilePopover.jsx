@@ -40,14 +40,14 @@ export function UserProfilePopover() {
     <div className="relative" ref={popoverRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`relative rounded-full transition-all ${isOpen ? 'ring-2 ring-blue-500' : ''}`}
+        className={`relative p-0.5 rounded-full transition-colors ${colors.bgHover} ${isOpen ? 'ring-2 ring-blue-500' : ''}`}
         title="User Profile"
       >
         {user.picture ? (
           <img
             src={user.picture}
             alt={user.name || 'User'}
-            className="w-8 h-8 rounded-full border-2 border-transparent hover:border-blue-400 transition-colors"
+            className="w-8 h-8 rounded-full"
           />
         ) : (
           <div className={`w-8 h-8 rounded-full ${colors.bgTertiary} flex items-center justify-center`}>
