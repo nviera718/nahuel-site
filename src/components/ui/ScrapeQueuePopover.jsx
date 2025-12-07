@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
-import { ListOrdered, X, Trash2 } from 'lucide-react'
+import { ListOrdered, X, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import { api } from '../../lib/api-client'
 import { useTheme } from '../../context/ThemeContext'
 import { ConfirmDialog } from './ConfirmDialog'
@@ -8,6 +8,7 @@ import { useWebSocketStats } from '../../hooks/useWebSocketStats'
 
 export function ScrapeQueuePopover() {
   const [isOpen, setIsOpen] = useState(false)
+  const [statsExpanded, setStatsExpanded] = useState(false)
   const popoverRef = useRef(null)
   const { colors } = useTheme()
   const queryClient = useQueryClient()
@@ -86,10 +87,11 @@ export function ScrapeQueuePopover() {
 
       {isOpen && (
         <div
-          className={`absolute right-0 mt-2 w-80 ${colors.bgSecondary} border ${colors.border} rounded-lg shadow-xl z-50`}
-          style={{ top: '100%' }}
+          className={`absolute right-0 mt-2 w-80 ${colors.bgSecondary} border ${colors.border} rounded-lg shadow-xl z-50 flex flex-col`}
+          style={{ top: '100%', maxHeight: 'calc(100vh - 100px)' }}
         >
-          <div className={`p-3 border-b ${colors.border} flex items-center justify-between`}>
+          {/* Header */}
+          <div className={`p-3 border-b ${colors.border} flex items-center justify-between flex-shrink-0`}>
             <h3 className={`font-semibold ${colors.text}`}>Scrape Queue</h3>
             <button
               onClick={() => setIsOpen(false)}
@@ -99,7 +101,47 @@ export function ScrapeQueuePopover() {
             </button>
           </div>
 
-          <div className="max-h-96 overflow-y-auto">
+          {/* Stats Section - Collapsible */}
+          {queue && (queue.total > 0 || totalActiveCount > 0) && (
+            <div className={`border-b ${colors.border} flex-shrink-0`}>
+              <button
+                onClick={() => setStatsExpanded(!statsExpanded)}
+                className={`w-full p-3 flex items-center justify-between ${colors.bgHover} transition-colors`}
+              >
+                <span className={`text-sm font-medium ${colors.text}`}>Queue Stats</span>
+                {statsExpanded ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+              </button>
+              {statsExpanded && (
+                <div className="p-3 pt-0">
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <div className={`${colors.textSecondary} mb-1`}>Pending</div>
+                      <div className={`text-lg font-semibold text-yellow-400`}>{pendingCount}</div>
+                    </div>
+                    <div>
+                      <div className={`${colors.textSecondary} mb-1`}>In Progress</div>
+                      <div className={`text-lg font-semibold text-blue-400`}>{inProgressCount}</div>
+                    </div>
+                    <div>
+                      <div className={`${colors.textSecondary} mb-1`}>Completed</div>
+                      <div className={`text-lg font-semibold text-green-400`}>{queue.completed || 0}</div>
+                    </div>
+                    <div>
+                      <div className={`${colors.textSecondary} mb-1`}>Failed</div>
+                      <div className={`text-lg font-semibold text-red-400`}>{queue.failed || 0}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Items List - Scrollable */}
+          <div className="flex-1 overflow-y-auto min-h-0">
             {!queue ? (
               <div className={`p-8 text-center ${colors.textSecondary}`}>
                 <ListOrdered className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -161,29 +203,6 @@ export function ScrapeQueuePopover() {
               </div>
             )}
           </div>
-
-          {queue && (queue.total > 0 || totalActiveCount > 0) && (
-            <div className={`p-3 border-t ${colors.border}`}>
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div>
-                  <div className={`${colors.textSecondary} mb-1`}>Pending</div>
-                  <div className={`text-lg font-semibold text-yellow-400`}>{pendingCount}</div>
-                </div>
-                <div>
-                  <div className={`${colors.textSecondary} mb-1`}>In Progress</div>
-                  <div className={`text-lg font-semibold text-blue-400`}>{inProgressCount}</div>
-                </div>
-                <div>
-                  <div className={`${colors.textSecondary} mb-1`}>Completed</div>
-                  <div className={`text-lg font-semibold text-green-400`}>{queue.completed || 0}</div>
-                </div>
-                <div>
-                  <div className={`${colors.textSecondary} mb-1`}>Failed</div>
-                  <div className={`text-lg font-semibold text-red-400`}>{queue.failed || 0}</div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
