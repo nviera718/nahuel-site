@@ -5,6 +5,7 @@ import { api } from '../../lib/api-client'
 import { useTheme } from '../../context/ThemeContext'
 import { ConfirmDialog } from './ConfirmDialog'
 import { useWebSocketStats } from '../../hooks/useWebSocketStats'
+import { usePermissions, PERMISSIONS } from '../../hooks/usePermissions'
 
 export function ScrapeQueuePopover() {
   const [isOpen, setIsOpen] = useState(false)
@@ -12,6 +13,7 @@ export function ScrapeQueuePopover() {
   const popoverRef = useRef(null)
   const { colors } = useTheme()
   const queryClient = useQueryClient()
+  const { hasPermission } = usePermissions()
 
   // Remove confirmation dialog state
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
@@ -132,38 +134,44 @@ export function ScrapeQueuePopover() {
           </div>
 
           {/* Action Buttons */}
-          <div className={`p-3 border-b ${colors.border} flex gap-2 flex-shrink-0`}>
-            <button
-              onClick={handleScrapeClick}
-              disabled={scrapeMutation.isPending || pendingCount === 0}
-              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded transition-colors ${
-                pendingCount > 0 && !scrapeMutation.isPending
-                  ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                  : 'bg-gray-500/20 text-gray-400 cursor-not-allowed'
-              }`}
-              title={pendingCount === 0 ? 'No pending items to scrape' : 'Start scraping pending items'}
-            >
-              <Play className="w-4 h-4" />
-              <span className="text-sm font-medium">
-                {scrapeMutation.isPending ? 'Starting...' : 'Scrape'}
-              </span>
-            </button>
-            <button
-              onClick={handleRemoveAllClick}
-              disabled={clearPendingMutation.isPending || pendingCount === 0}
-              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded transition-colors ${
-                pendingCount > 0 && !clearPendingMutation.isPending
-                  ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400'
-                  : 'bg-gray-500/20 text-gray-400 cursor-not-allowed'
-              }`}
-              title={pendingCount === 0 ? 'No pending items to remove' : 'Remove all pending items'}
-            >
-              <Trash className="w-4 h-4" />
-              <span className="text-sm font-medium">
-                {clearPendingMutation.isPending ? 'Removing...' : 'Remove All'}
-              </span>
-            </button>
-          </div>
+          {(hasPermission(PERMISSIONS.START_SCRAPE) || hasPermission(PERMISSIONS.MANAGE_SCRAPE_QUEUE)) && (
+            <div className={`p-3 border-b ${colors.border} flex gap-2 flex-shrink-0`}>
+              {hasPermission(PERMISSIONS.START_SCRAPE) && (
+                <button
+                  onClick={handleScrapeClick}
+                  disabled={scrapeMutation.isPending || pendingCount === 0}
+                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded transition-colors ${
+                    pendingCount > 0 && !scrapeMutation.isPending
+                      ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                      : 'bg-gray-500/20 text-gray-400 cursor-not-allowed'
+                  }`}
+                  title={pendingCount === 0 ? 'No pending items to scrape' : 'Start scraping pending items'}
+                >
+                  <Play className="w-4 h-4" />
+                  <span className="text-sm font-medium">
+                    {scrapeMutation.isPending ? 'Starting...' : 'Scrape'}
+                  </span>
+                </button>
+              )}
+              {hasPermission(PERMISSIONS.MANAGE_SCRAPE_QUEUE) && (
+                <button
+                  onClick={handleRemoveAllClick}
+                  disabled={clearPendingMutation.isPending || pendingCount === 0}
+                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded transition-colors ${
+                    pendingCount > 0 && !clearPendingMutation.isPending
+                      ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400'
+                      : 'bg-gray-500/20 text-gray-400 cursor-not-allowed'
+                  }`}
+                  title={pendingCount === 0 ? 'No pending items to remove' : 'Remove all pending items'}
+                >
+                  <Trash className="w-4 h-4" />
+                  <span className="text-sm font-medium">
+                    {clearPendingMutation.isPending ? 'Removing...' : 'Remove All'}
+                  </span>
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Stats Section - Collapsible */}
           {queue && (queue.total > 0 || totalActiveCount > 0) && (
@@ -253,14 +261,16 @@ export function ScrapeQueuePopover() {
                           </div>
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleRemoveClick(item)}
-                        disabled={removeMutation.isPending || item.status !== 'pending'}
-                        className={`p-1.5 rounded transition-colors ${item.status === 'pending' ? 'hover:bg-red-500/20 text-red-400' : 'opacity-30 cursor-not-allowed'}`}
-                        title={item.status === 'pending' ? 'Remove from queue' : 'Cannot remove (not pending)'}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {hasPermission(PERMISSIONS.MANAGE_SCRAPE_QUEUE) && (
+                        <button
+                          onClick={() => handleRemoveClick(item)}
+                          disabled={removeMutation.isPending || item.status !== 'pending'}
+                          className={`p-1.5 rounded transition-colors ${item.status === 'pending' ? 'hover:bg-red-500/20 text-red-400' : 'opacity-30 cursor-not-allowed'}`}
+                          title={item.status === 'pending' ? 'Remove from queue' : 'Cannot remove (not pending)'}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

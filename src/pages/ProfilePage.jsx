@@ -15,6 +15,7 @@ import { MultiSelect } from '../components/ui/MultiSelect'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { AddProfileDialog } from '../components/ui/AddProfileDialog'
 import { Header } from '../components/ui/Header'
+import { usePermissions, PERMISSIONS } from '../hooks/usePermissions'
 
 const STORAGE_KEY_PANEL = 'profiles_filter_panel_open'
 const STORAGE_KEY_FILTERS = 'profiles_filters'
@@ -38,7 +39,7 @@ const REVIEW_STATUS_OPTIONS = [
   { value: 'fully_reviewed', label: 'Fully Reviewed' },
 ]
 
-const createColumns = (onDelete, onQueue, onRemoveFromQueue, queuedProfileIds) => [
+const createColumns = (onDelete, onQueue, onRemoveFromQueue, queuedProfileIds, canDelete) => [
   {
     accessorKey: 'username',
     header: 'Profile',
@@ -142,15 +143,17 @@ const createColumns = (onDelete, onQueue, onRemoveFromQueue, queuedProfileIds) =
           >
             <ExternalLink className="w-4 h-4" />
           </a>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onDelete(row.original)
-            }}
-            className="p-2 hover:bg-red-500/20 rounded-lg transition-colors inline-flex opacity-70 hover:opacity-100 text-red-400"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {canDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onDelete(row.original)
+              }}
+              className="p-2 hover:bg-red-500/20 rounded-lg transition-colors inline-flex opacity-70 hover:opacity-100 text-red-400"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       )
     },
@@ -158,7 +161,7 @@ const createColumns = (onDelete, onQueue, onRemoveFromQueue, queuedProfileIds) =
 ]
 
 // Mobile card component
-function ProfileCard({ profile, onClick, onDelete, onQueue, onRemoveFromQueue, isQueued, colors }) {
+function ProfileCard({ profile, onClick, onDelete, onQueue, onRemoveFromQueue, isQueued, canDelete, colors }) {
   const unreviewed = parseInt(profile.unreviewed_posts) || 0
   const total = parseInt(profile.total_posts) || 0
   const reviewed = total - unreviewed
@@ -220,15 +223,17 @@ function ProfileCard({ profile, onClick, onDelete, onQueue, onRemoveFromQueue, i
           >
             <ExternalLink className={`w-4 h-4 ${colors.textSecondary}`} />
           </a>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onDelete(profile)
-            }}
-            className="p-2 hover:bg-red-500/20 rounded-lg transition-colors text-red-400"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {canDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onDelete(profile)
+              }}
+              className="p-2 hover:bg-red-500/20 rounded-lg transition-colors text-red-400"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
       <div className="flex items-center gap-3">
@@ -271,6 +276,7 @@ export function ProfilePage() {
   const search = useSearch({ from: '/content-farm/categories/$categorySlug' })
   const queryClient = useQueryClient()
   const { darkMode, setDarkMode, colors } = useTheme()
+  const { hasPermission } = usePermissions()
   const [sorting, setSorting] = useState([{ id: 'unreviewed_posts', desc: true }])
   const initializedRef = useRef(false)
   const searchDebounceRef = useRef(null)
@@ -547,7 +553,8 @@ export function ProfilePage() {
     syncToUrl(buildSearchObject({ page: newPage }))
   }
 
-  const columns = useMemo(() => createColumns(handleDeleteClick, handleQueueClick, handleRemoveFromQueueClick, queuedProfileIds), [handleQueueClick, handleRemoveFromQueueClick, queuedProfileIds])
+  const canDelete = hasPermission(PERMISSIONS.DELETE_PROFILE)
+  const columns = useMemo(() => createColumns(handleDeleteClick, handleQueueClick, handleRemoveFromQueueClick, queuedProfileIds, canDelete), [handleQueueClick, handleRemoveFromQueueClick, queuedProfileIds, canDelete])
 
   const table = useReactTable({
     data: profiles,
@@ -666,6 +673,7 @@ export function ProfilePage() {
                     onDelete={handleDeleteClick}
                     onQueue={handleQueueClick}
                     onRemoveFromQueue={handleRemoveFromQueueClick}
+                    canDelete={canDelete}
                     isQueued={queuedProfileIds.has(row.original.id)}
                   />
                 ))}

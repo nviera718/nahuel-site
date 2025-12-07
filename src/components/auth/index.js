@@ -1,4 +1,5 @@
 export { ProtectedRoute } from './ProtectedRoute'
+export { ProtectedComponent } from './ProtectedComponent'
 export { LoginButton } from './LoginButton'
 export { LogoutButton } from './LogoutButton'
 export { UserProfile } from './UserProfile'

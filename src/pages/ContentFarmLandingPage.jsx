@@ -2,6 +2,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { FolderOpen, Scissors, Film } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 import { Header } from '../components/ui/Header'
+import { usePermissions, PERMISSIONS } from '../hooks/usePermissions'
 function NavCard({ title, description, icon: Icon, onClick, colors }) {
   return (
     <div
@@ -22,6 +23,7 @@ function NavCard({ title, description, icon: Icon, onClick, colors }) {
 export function ContentFarmLandingPage() {
   const navigate = useNavigate()
   const { darkMode, setDarkMode, colors } = useTheme()
+  const { hasPermission } = usePermissions()
 
   const breadcrumbItems = [
     { label: 'Content Farm' }
@@ -36,27 +38,33 @@ export function ContentFarmLandingPage() {
           <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
 
           <div className="grid gap-4 md:grid-cols-3">
-            <NavCard
-              title="Classification"
-              description="Categorize video contents. Manage profile's and their categories"
-              icon={FolderOpen}
-              onClick={() => navigate({ to: '/content-farm/categories' })}
-              colors={colors}
-            />
-            <NavCard
-              title="Post Processing"
-              description="Process and refine video clips"
-              icon={Scissors}
-              onClick={() => navigate({ to: '/content-farm/post-processing' })}
-              colors={colors}
-            />
-            <NavCard
-              title="Production"
-              description="Create and manage production-ready clips"
-              icon={Film}
-              onClick={() => navigate({ to: '/content-farm/production' })}
-              colors={colors}
-            />
+            {hasPermission(PERMISSIONS.VIEW_CLASSIFIER) && (
+              <NavCard
+                title="Classification"
+                description="Categorize video contents. Manage profile's and their categories"
+                icon={FolderOpen}
+                onClick={() => navigate({ to: '/content-farm/categories' })}
+                colors={colors}
+              />
+            )}
+            {hasPermission(PERMISSIONS.VIEW_POST_PROCESSING) && (
+              <NavCard
+                title="Post Processing"
+                description="Process and refine video clips"
+                icon={Scissors}
+                onClick={() => navigate({ to: '/content-farm/post-processing' })}
+                colors={colors}
+              />
+            )}
+            {hasPermission(PERMISSIONS.VIEW_PRODUCTION) && (
+              <NavCard
+                title="Production"
+                description="Create and manage production-ready clips"
+                icon={Film}
+                onClick={() => navigate({ to: '/content-farm/production' })}
+                colors={colors}
+              />
+            )}
           </div>
         </div>
       </main>
