@@ -8,11 +8,12 @@ import {
   getFilteredRowModel,
   flexRender,
 } from '@tanstack/react-table'
-import { ArrowLeft, Check, X, Clock, Moon, Sun, Filter, Search } from 'lucide-react'
+import { Check, X, Clock, Moon, Sun, Filter, Search } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { useTheme } from '../context/ThemeContext'
 import { Dropdown } from '../components/ui/Dropdown'
 import { MultiSelect } from '../components/ui/MultiSelect'
+import { Breadcrumb } from '../components/ui/Breadcrumb'
 
 const STORAGE_KEY_PANEL = 'videos_filter_panel_open'
 const STORAGE_KEY_FILTERS = 'videos_filters'
@@ -220,8 +221,8 @@ function VideoCard({ video, onClick, colors }) {
 
 export function ProfileVideosPage() {
   const navigate = useNavigate()
-  const { categorySlug, profileId } = useParams({ from: '/content-farm/$categorySlug/$profileId' })
-  const search = useSearch({ from: '/content-farm/$categorySlug/$profileId' })
+  const { categorySlug, profileId } = useParams({ from: '/content-farm/categories/$categorySlug/$profileId' })
+  const search = useSearch({ from: '/content-farm/categories/$categorySlug/$profileId' })
   const { darkMode, setDarkMode, colors } = useTheme()
   const initializedRef = useRef(false)
 
@@ -271,7 +272,7 @@ export function ProfileVideosPage() {
         setTrickTypeFilterState(stored.trickType ? stored.trickType.split(',').filter(Boolean) : [])
         setVideoUrlFilterState(stored.videoUrl || 'all')
         // Also update URL
-        navigate({ to: '/content-farm/$categorySlug/$profileId', params: { categorySlug, profileId }, search: stored, replace: true })
+        navigate({ to: '/content-farm/categories/$categorySlug/$profileId', params: { categorySlug, profileId }, search: stored, replace: true })
       }
     }
   }, [])
@@ -297,7 +298,7 @@ export function ProfileVideosPage() {
   // Update URL and localStorage when filters change
   const syncToUrl = (newSearch) => {
     saveFilters(newSearch)
-    navigate({ to: '/content-farm/$categorySlug/$profileId', params: { categorySlug, profileId }, search: newSearch, replace: true })
+    navigate({ to: '/content-farm/categories/$categorySlug/$profileId', params: { categorySlug, profileId }, search: newSearch, replace: true })
   }
 
   const setGlobalFilter = (value) => {
@@ -317,11 +318,34 @@ export function ProfileVideosPage() {
     syncToUrl(buildSearchObject({ videoUrl: value }))
   }
 
+  // Fetch profile info
+  const { data: profileData } = useQuery({
+    queryKey: ['profile', profileId],
+    queryFn: () => api.profiles.getById(profileId),
+    enabled: !!profileId,
+  })
+  const profile = profileData?.profile
+
+  // Fetch category info
+  const { data: categoryData } = useQuery({
+    queryKey: ['category', categorySlug],
+    queryFn: () => api.categories.getBySlug(categorySlug),
+    enabled: !!categorySlug,
+  })
+  const category = categoryData?.category
+
   const { data, isLoading } = useQuery({
     queryKey: ['profile-videos', profileId],
     queryFn: () => api.posts.getWithReviewStatus({ profileId }),
     enabled: !!profileId,
   })
+
+  const breadcrumbItems = [
+    { label: 'Content Farm', to: { to: '/content-farm' } },
+    { label: 'Categories', to: { to: '/content-farm/categories' } },
+    { label: category?.name || categorySlug, to: { to: '/content-farm/categories/$categorySlug', params: { categorySlug } } },
+    { label: profile?.username || 'Profile' },
+  ]
 
   const filteredData = useMemo(() => {
     if (!data?.posts) return []
@@ -368,7 +392,7 @@ export function ProfileVideosPage() {
     setTrickTypeFilterState([])
     setVideoUrlFilterState('all')
     saveFilters({})
-    navigate({ to: '/content-farm/$categorySlug/$profileId', params: { categorySlug, profileId }, search: {}, replace: true })
+    navigate({ to: '/content-farm/categories/$categorySlug/$profileId', params: { categorySlug, profileId }, search: {}, replace: true })
   }
 
   const table = useReactTable({
@@ -383,15 +407,7 @@ export function ProfileVideosPage() {
     <div className={`h-screen ${colors.bg} ${colors.text} flex flex-col`}>
       <header className={`h-14 flex-shrink-0 border-b ${colors.border} ${colors.bgSecondary}`}>
         <div className="h-full px-4 md:px-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate({ to: '/content-farm/$categorySlug', params: { categorySlug } })}
-              className={`p-2 ${colors.bgHover} rounded-lg transition-colors`}
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <span className="text-base font-semibold">Profile Videos</span>
-          </div>
+          <Breadcrumb items={breadcrumbItems} />
           <button
             onClick={() => setDarkMode(!darkMode)}
             className={`p-2 rounded-full transition-colors ${colors.bgHover}`}
@@ -494,7 +510,7 @@ export function ProfileVideosPage() {
                     key={row.id}
                     video={row.original}
                     colors={colors}
-                    onClick={() => navigate({ to: '/content-farm/$categorySlug/$profileId/classify/$postId', params: { categorySlug, profileId, postId: row.original.id } })}
+                    onClick={() => navigate({ to: '/content-farm/categories/$categorySlug/$profileId/classify/$postId', params: { categorySlug, profileId, postId: row.original.id } })}
                   />
                 ))}
                 {rows.length === 0 && (
@@ -529,7 +545,7 @@ export function ProfileVideosPage() {
                         <tr
                           key={row.id}
                           className={`border-b ${colors.border} last:border-0 ${colors.bgHover} cursor-pointer transition-colors`}
-                          onClick={() => navigate({ to: '/content-farm/$categorySlug/$profileId/classify/$postId', params: { categorySlug, profileId, postId: row.original.id } })}
+                          onClick={() => navigate({ to: '/content-farm/categories/$categorySlug/$profileId/classify/$postId', params: { categorySlug, profileId, postId: row.original.id } })}
                         >
                           {row.getVisibleCells().map(cell => (
                             <td key={cell.id} className="px-4 py-3">

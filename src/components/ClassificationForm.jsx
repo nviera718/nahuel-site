@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { Trash2, Check, Star } from 'lucide-react'
+import { Trash2, Check, Star, Loader2 } from 'lucide-react'
 
 const TRICK_TYPES = [
   'Rail', 'Gap', 'Half Pipe', 'Ledge', 'Stairs', 'Manual', 'Flip Trick', 'Grind', 'Line', 'Hill Bomb', 'Other'
@@ -33,7 +33,7 @@ function StarRating({ value, onChange, label, darkMode }) {
   )
 }
 
-export function ClassificationForm({ classification, onChange, onSave, isSaving, darkMode = true, onClipVideo }) {
+export function ClassificationForm({ classification, onChange, isSaving, darkMode = true, onClipVideo }) {
   const colors = darkMode
     ? {
         cardBg: 'bg-[#181818]',
@@ -64,7 +64,15 @@ export function ClassificationForm({ classification, onChange, onSave, isSaving,
 
   return (
     <div className={`${colors.cardBg} rounded-2xl p-10 border ${colors.cardBorder} ${colors.shadow}`}>
-      <h3 className={`text-lg font-semibold ${colors.text} mb-8`}>Classification</h3>
+      <div className="flex items-center justify-between mb-8">
+        <h3 className={`text-lg font-semibold ${colors.text}`}>Classification</h3>
+        {isSaving && (
+          <div className={`flex items-center gap-2 ${colors.textSecondary}`}>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-sm">Saving...</span>
+          </div>
+        )}
+      </div>
 
       {/* Approval Buttons */}
       <div className="grid grid-cols-2 gap-3 mb-6">
@@ -91,29 +99,6 @@ export function ClassificationForm({ classification, onChange, onSave, isSaving,
           Approve
         </button>
       </div>
-
-      {/* Save Button - only visible after selection made */}
-      <AnimatePresence>
-        {classification.isApproved !== null && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div className="mt-6">
-              <button
-                className="w-full h-12 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
-                onClick={onSave}
-                disabled={isSaving}
-              >
-                {isSaving ? 'Saving...' : 'Save Classification'}
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Classification Form - expands below when approved */}
       <AnimatePresence mode="wait">

@@ -1,31 +1,53 @@
 import { useParams, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Moon, Sun } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { Moon, Sun } from 'lucide-react'
 import { usePost } from '../hooks/usePost'
 import { useTheme } from '../context/ThemeContext'
+import { api } from '../lib/api-client'
+import { Breadcrumb } from '../components/ui/Breadcrumb'
 
 export function ClipVideoPage() {
   const navigate = useNavigate()
-  const { categorySlug, profileId, postId } = useParams({ from: '/content-farm/$categorySlug/$profileId/classify/$postId/clip' })
+  const { categorySlug, profileId, postId } = useParams({ from: '/content-farm/categories/$categorySlug/$profileId/classify/$postId/clip' })
   const { darkMode, setDarkMode, colors } = useTheme()
   const { data: post, isLoading } = usePost(postId)
+
+  // Fetch profile info
+  const { data: profileData } = useQuery({
+    queryKey: ['profile', profileId],
+    queryFn: () => api.profiles.getById(profileId),
+    enabled: !!profileId,
+  })
+  const profile = profileData?.profile
+
+  // Fetch category info
+  const { data: categoryData } = useQuery({
+    queryKey: ['category', categorySlug],
+    queryFn: () => api.categories.getBySlug(categorySlug),
+    enabled: !!categorySlug,
+  })
+  const category = categoryData?.category
+
+  const breadcrumbItems = [
+    { label: 'Content Farm', to: { to: '/content-farm' } },
+    { label: 'Categories', to: { to: '/content-farm/categories' } },
+    { label: category?.name || categorySlug, to: { to: '/content-farm/categories/$categorySlug', params: { categorySlug } } },
+    { label: profile?.username || 'Profile', to: { to: '/content-farm/categories/$categorySlug/$profileId', params: { categorySlug, profileId } } },
+    { label: 'Classify', to: { to: '/content-farm/categories/$categorySlug/$profileId/classify/$postId', params: { categorySlug, profileId, postId } } },
+    { label: 'Clip' },
+  ]
 
   return (
     <div className={`h-screen w-screen ${colors.bg} ${colors.text} flex flex-col`}>
       <header className={`h-14 flex-shrink-0 border-b ${colors.border} ${colors.bgSecondary}`}>
         <div className="h-full px-3 md:px-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 md:gap-4">
-            <button
-              onClick={() => navigate({ to: '/content-farm/$categorySlug/$profileId/classify/$postId', params: { categorySlug, profileId, postId } })}
-              className={`p-2 rounded-lg transition-colors ${colors.bgHover}`}
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <span className={`text-sm md:text-base font-semibold ${colors.text}`}>Clip Video</span>
+          <div className="flex-1 min-w-0 mr-2">
+            <Breadcrumb items={breadcrumbItems} />
           </div>
 
           <button
             onClick={() => setDarkMode(!darkMode)}
-            className={`p-1.5 md:p-2 rounded-full transition-colors ${colors.bgHover}`}
+            className={`p-1.5 md:p-2 rounded-full transition-colors ${colors.bgHover} flex-shrink-0`}
           >
             {darkMode ? <Sun className="w-4 h-4 md:w-5 md:h-5" /> : <Moon className="w-4 h-4 md:w-5 md:h-5" />}
           </button>

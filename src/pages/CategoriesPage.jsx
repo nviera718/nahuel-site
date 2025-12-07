@@ -5,6 +5,7 @@ import { Plus, FolderOpen, Moon, Sun, Trash2 } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { useTheme } from '../context/ThemeContext'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
+import { Breadcrumb } from '../components/ui/Breadcrumb'
 
 function AddCategoryDialog({ isOpen, onClose, onSubmit, isLoading, error }) {
   const { colors } = useTheme()
@@ -161,11 +162,16 @@ export function CategoriesPage() {
 
   const categories = data?.categories || []
 
+  const breadcrumbItems = [
+    { label: 'Content Farm', to: { to: '/content-farm' } },
+    { label: 'Categories' },
+  ]
+
   return (
     <div className={`h-screen ${colors.bg} ${colors.text} flex flex-col`}>
       <header className={`h-14 flex-shrink-0 border-b ${colors.border} ${colors.bgSecondary}`}>
         <div className="h-full px-4 md:px-6 flex items-center justify-between">
-          <span className="text-base font-semibold">Video Classifier</span>
+          <Breadcrumb items={breadcrumbItems} />
           <button
             onClick={() => setDarkMode(!darkMode)}
             className={`p-2 rounded-full transition-colors ${colors.bgHover}`}
@@ -204,7 +210,7 @@ export function CategoriesPage() {
                   key={category.id}
                   category={category}
                   colors={colors}
-                  onClick={() => navigate({ to: '/content-farm/$categorySlug', params: { categorySlug: category.slug } })}
+                  onClick={() => navigate({ to: '/content-farm/categories/$categorySlug', params: { categorySlug: category.slug } })}
                   onDelete={handleDeleteClick}
                 />
               ))}

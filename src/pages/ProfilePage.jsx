@@ -7,12 +7,13 @@ import {
   getSortedRowModel,
   flexRender,
 } from '@tanstack/react-table'
-import { ExternalLink, Search, ChevronUp, ChevronDown, Moon, Sun, Filter, X, Trash2, Plus, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react'
+import { ExternalLink, Search, ChevronUp, ChevronDown, Moon, Sun, Filter, X, Trash2, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { useTheme } from '../context/ThemeContext'
 import { Dropdown } from '../components/ui/Dropdown'
 import { MultiSelect } from '../components/ui/MultiSelect'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
+import { Breadcrumb } from '../components/ui/Breadcrumb'
 import { AddProfileDialog } from '../components/ui/AddProfileDialog'
 
 const STORAGE_KEY_PANEL = 'profiles_filter_panel_open'
@@ -215,10 +216,10 @@ function saveFilters(filters) {
   }
 }
 
-export function HomePage() {
+export function ProfilePage() {
   const navigate = useNavigate()
-  const { categorySlug } = useParams({ from: '/content-farm/$categorySlug' })
-  const search = useSearch({ from: '/content-farm/$categorySlug' })
+  const { categorySlug } = useParams({ from: '/content-farm/categories/$categorySlug' })
+  const search = useSearch({ from: '/content-farm/categories/$categorySlug' })
   const queryClient = useQueryClient()
   const { darkMode, setDarkMode, colors } = useTheme()
   const [sorting, setSorting] = useState([{ id: 'unreviewed_posts', desc: true }])
@@ -231,6 +232,12 @@ export function HomePage() {
     queryFn: () => api.categories.getBySlug(categorySlug),
   })
   const category = categoryData?.category
+
+  const breadcrumbItems = [
+    { label: 'Content Farm', to: { to: '/content-farm' } },
+    { label: 'Categories', to: { to: '/content-farm/categories' } },
+    { label: category?.name || categorySlug },
+  ]
 
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -336,7 +343,7 @@ export function HomePage() {
         setReviewStatusFilterState(stored.reviewStatus || 'all')
         setPage(parseInt(stored.page) || 0)
         // Also update URL
-        navigate({ to: '/content-farm/$categorySlug', params: { categorySlug }, search: stored, replace: true })
+        navigate({ to: '/content-farm/categories/$categorySlug', params: { categorySlug }, search: stored, replace: true })
       }
     }
   }, [categorySlug])
@@ -364,7 +371,7 @@ export function HomePage() {
   // Update URL and localStorage when filters change
   const syncToUrl = useCallback((newSearch) => {
     saveFilters(newSearch)
-    navigate({ to: '/content-farm/$categorySlug', params: { categorySlug }, search: newSearch, replace: true })
+    navigate({ to: '/content-farm/categories/$categorySlug', params: { categorySlug }, search: newSearch, replace: true })
   }, [navigate, categorySlug])
 
   // Debounced search handler
@@ -434,7 +441,7 @@ export function HomePage() {
     setReviewStatusFilterState('all')
     setPage(0)
     saveFilters({})
-    navigate({ to: '/content-farm/$categorySlug', params: { categorySlug }, search: {}, replace: true })
+    navigate({ to: '/content-farm/categories/$categorySlug', params: { categorySlug }, search: {}, replace: true })
   }
 
   const goToPage = (newPage) => {
@@ -463,15 +470,7 @@ export function HomePage() {
     <div className={`h-screen ${colors.bg} ${colors.text} flex flex-col`}>
       <header className={`h-14 flex-shrink-0 border-b ${colors.border} ${colors.bgSecondary}`}>
         <div className="h-full px-4 md:px-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate({ to: '/content-farm' })}
-              className={`p-2 rounded-full transition-colors ${colors.bgHover}`}
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <span className="text-base font-semibold">{category?.name || 'Profiles'}</span>
-          </div>
+          <Breadcrumb items={breadcrumbItems} />
           <button
             onClick={() => setDarkMode(!darkMode)}
             className={`p-2 rounded-full transition-colors ${colors.bgHover}`}
@@ -575,7 +574,7 @@ export function HomePage() {
                     key={row.id}
                     profile={row.original}
                     colors={colors}
-                    onClick={() => navigate({ to: '/content-farm/$categorySlug/$profileId', params: { categorySlug, profileId: row.original.id } })}
+                    onClick={() => navigate({ to: '/content-farm/categories/$categorySlug/$profileId', params: { categorySlug, profileId: row.original.id } })}
                     onDelete={handleDeleteClick}
                   />
                 ))}
@@ -618,7 +617,7 @@ export function HomePage() {
                         <tr
                           key={row.id}
                           className={`border-b ${colors.border} last:border-0 ${colors.bgHover} cursor-pointer transition-colors`}
-                          onClick={() => navigate({ to: '/content-farm/$categorySlug/$profileId', params: { categorySlug, profileId: row.original.id } })}
+                          onClick={() => navigate({ to: '/content-farm/categories/$categorySlug/$profileId', params: { categorySlug, profileId: row.original.id } })}
                         >
                           {row.getVisibleCells().map(cell => (
                             <td key={cell.id} className="px-4 py-3">
