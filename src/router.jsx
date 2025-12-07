@@ -9,6 +9,7 @@ import { ClipVideoPage } from './pages/ClipVideoPage'
 import { PostProcessingPage } from './pages/PostProcessingPage'
 import { ProductionPage } from './pages/ProductionPage'
 import { WelcomePage } from './pages/WelcomePage'
+import { ProtectedRoute } from './components/auth'
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -24,35 +25,55 @@ const indexRoute = createRoute({
 const contentFarmRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/content-farm',
-  component: ContentFarmLandingPage,
+  component: () => (
+    <ProtectedRoute>
+      <ContentFarmLandingPage />
+    </ProtectedRoute>
+  ),
 })
 
 // Categories page
 const categoriesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/content-farm/categories',
-  component: CategoriesPage,
+  component: () => (
+    <ProtectedRoute>
+      <CategoriesPage />
+    </ProtectedRoute>
+  ),
 })
 
 // Post processing page
 const postProcessingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/content-farm/post-processing',
-  component: PostProcessingPage,
+  component: () => (
+    <ProtectedRoute>
+      <PostProcessingPage />
+    </ProtectedRoute>
+  ),
 })
 
 // Production page
 const productionRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/content-farm/production',
-  component: ProductionPage,
+  component: () => (
+    <ProtectedRoute>
+      <ProductionPage />
+    </ProtectedRoute>
+  ),
 })
 
 // Profiles page (within a category)
 const categoryProfilesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/content-farm/categories/$categorySlug',
-  component: ProfilePage,
+  component: () => (
+    <ProtectedRoute>
+      <ProfilePage />
+    </ProtectedRoute>
+  ),
   validateSearch: (search) => ({
     platform: search.platform || '',
     postStatus: search.postStatus || '',
@@ -65,7 +86,11 @@ const categoryProfilesRoute = createRoute({
 const profileVideosRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/content-farm/categories/$categorySlug/$profileId',
-  component: ProfileVideosPage,
+  component: () => (
+    <ProtectedRoute>
+      <ProfileVideosPage />
+    </ProtectedRoute>
+  ),
   validateSearch: (search) => ({
     status: search.status || '',
     trickType: search.trickType || '',
@@ -77,13 +102,21 @@ const profileVideosRoute = createRoute({
 const classifierRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/content-farm/categories/$categorySlug/$profileId/classify/$postId',
-  component: VideoClassifierPage,
+  component: () => (
+    <ProtectedRoute>
+      <VideoClassifierPage />
+    </ProtectedRoute>
+  ),
 })
 
 const clipVideoRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/content-farm/categories/$categorySlug/$profileId/classify/$postId/clip',
-  component: ClipVideoPage,
+  component: () => (
+    <ProtectedRoute>
+      <ClipVideoPage />
+    </ProtectedRoute>
+  ),
 })
 
 const routeTree = rootRoute.addChildren([
