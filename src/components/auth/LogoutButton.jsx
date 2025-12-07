@@ -8,7 +8,7 @@ export const LogoutButton = ({ className = '' }) => {
       onClick={() =>
         logout({
           logoutParams: {
-            returnTo: window.location.origin,
+            returnTo: window.location.origin + '/content-farm',
           },
         })
       }
