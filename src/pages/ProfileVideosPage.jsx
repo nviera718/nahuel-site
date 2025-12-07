@@ -8,12 +8,12 @@ import {
   getFilteredRowModel,
   flexRender,
 } from '@tanstack/react-table'
-import { Check, X, Clock, Moon, Sun, Filter, Search } from 'lucide-react'
+import { Check, X, Clock, Filter, Search } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { useTheme } from '../context/ThemeContext'
 import { Dropdown } from '../components/ui/Dropdown'
 import { MultiSelect } from '../components/ui/MultiSelect'
-import { Breadcrumb } from '../components/ui/Breadcrumb'
+import { Header } from '../components/ui/Header'
 
 const STORAGE_KEY_PANEL = 'videos_filter_panel_open'
 const STORAGE_KEY_FILTERS = 'videos_filters'
@@ -405,17 +405,7 @@ export function ProfileVideosPage() {
 
   return (
     <div className={`h-screen ${colors.bg} ${colors.text} flex flex-col`}>
-      <header className={`h-14 flex-shrink-0 border-b ${colors.border} ${colors.bgSecondary}`}>
-        <div className="h-full px-4 md:px-6 flex items-center justify-between">
-          <Breadcrumb items={breadcrumbItems} />
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className={`p-2 rounded-full transition-colors ${colors.bgHover}`}
-          >
-            {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
-        </div>
-      </header>
+      <Header breadcrumbItems={breadcrumbItems} />
 
       <main className="flex-1 overflow-hidden p-4 md:p-6">
         <div className="h-full max-w-6xl mx-auto flex flex-col">

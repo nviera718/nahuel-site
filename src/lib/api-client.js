@@ -36,4 +36,15 @@ export const api = {
     create: (data) => apiClient.post('/classifications', data).then(res => res.data),
     update: (postId, data) => apiClient.put(`/classifications/${postId}`, data).then(res => res.data),
   },
+  queue: {
+    add: (data) => apiClient.post('/queue', data).then(res => res.data),
+    getAll: (params) => apiClient.get('/queue', { params }).then(res => res.data),
+    remove: (queueId) => apiClient.delete(`/queue/${queueId}`).then(res => res.data),
+    clear: (data) => apiClient.post('/queue/clear', data).then(res => res.data),
+  },
+  scrape: {
+    trigger: (data) => apiClient.post('/scrape/trigger', data).then(res => res.data),
+    getJobs: (params) => apiClient.get('/scrape/jobs', { params }).then(res => res.data),
+    getStatus: (jobId) => apiClient.get(`/scrape/status/${jobId}`).then(res => res.data),
+  },
 }

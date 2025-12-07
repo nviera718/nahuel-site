@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useParams, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { Moon, Sun, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { InstagramEmbed } from '../components/InstagramEmbed'
 import { ClassificationForm } from '../components/ClassificationForm'
@@ -9,7 +9,7 @@ import { usePost } from '../hooks/usePost'
 import { useClassification, useCreateClassification, useUpdateClassification } from '../hooks/useClassification'
 import { api } from '../lib/api-client'
 import { useTheme } from '../context/ThemeContext'
-import { Breadcrumb } from '../components/ui/Breadcrumb'
+import { Header } from '../components/ui/Header'
 
 export function VideoClassifierPage() {
   const navigate = useNavigate()
@@ -292,42 +292,27 @@ export function VideoClassifierPage() {
 
   return (
     <div className={`h-screen w-screen ${colors.bg} ${colors.text} flex flex-col`}>
-      <header className={`h-14 flex-shrink-0 border-b ${colors.border} ${colors.bgSecondary}`}>
-        <div className="h-full px-3 md:px-4 flex items-center justify-between">
-          <div className="flex-1 min-w-0 mr-2">
-            <Breadcrumb items={breadcrumbItems} />
-          </div>
-
-          <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
-            <div className={`flex items-center ${colors.bgTertiary} rounded-full`}>
-              <button
-                onClick={goToPrev}
-                disabled={!canGoPrev}
-                className={`p-1.5 md:p-2 rounded-full transition-colors ${!canGoPrev ? 'opacity-30 cursor-not-allowed' : colors.bgHover}`}
-              >
-                <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
-              </button>
-              <span className={`text-xs md:text-sm font-medium px-1 md:px-2 min-w-[50px] md:min-w-[60px] text-center ${colors.text}`}>
-                {showAllDone ? 'Done' : currentIndex >= 0 ? `${currentIndex + 1}/${postIds.length}` : '...'}
-              </span>
-              <button
-                onClick={goToNext}
-                disabled={!canGoNext}
-                className={`p-1.5 md:p-2 rounded-full transition-colors ${!canGoNext ? 'opacity-30 cursor-not-allowed' : colors.bgHover}`}
-              >
-                <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
-              </button>
-            </div>
-
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className={`p-1.5 md:p-2 rounded-full transition-colors ${colors.bgHover}`}
-            >
-              {darkMode ? <Sun className="w-4 h-4 md:w-5 md:h-5" /> : <Moon className="w-4 h-4 md:w-5 md:h-5" />}
-            </button>
-          </div>
+      <Header breadcrumbItems={breadcrumbItems}>
+        <div className={`flex items-center ${colors.bgTertiary} rounded-full`}>
+          <button
+            onClick={goToPrev}
+            disabled={!canGoPrev}
+            className={`p-1.5 md:p-2 rounded-full transition-colors ${!canGoPrev ? 'opacity-30 cursor-not-allowed' : colors.bgHover}`}
+          >
+            <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
+          </button>
+          <span className={`text-xs md:text-sm font-medium px-1 md:px-2 min-w-[50px] md:min-w-[60px] text-center ${colors.text}`}>
+            {showAllDone ? 'Done' : currentIndex >= 0 ? `${currentIndex + 1}/${postIds.length}` : '...'}
+          </span>
+          <button
+            onClick={goToNext}
+            disabled={!canGoNext}
+            className={`p-1.5 md:p-2 rounded-full transition-colors ${!canGoNext ? 'opacity-30 cursor-not-allowed' : colors.bgHover}`}
+          >
+            <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
+          </button>
         </div>
-      </header>
+      </Header>
 
       <main className="flex-1 overflow-auto">
         <AnimatePresence mode="wait">

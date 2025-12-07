@@ -1,10 +1,9 @@
 import { useParams, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { Moon, Sun } from 'lucide-react'
 import { usePost } from '../hooks/usePost'
 import { useTheme } from '../context/ThemeContext'
 import { api } from '../lib/api-client'
-import { Breadcrumb } from '../components/ui/Breadcrumb'
+import { Header } from '../components/ui/Header'
 
 export function ClipVideoPage() {
   const navigate = useNavigate()
@@ -39,20 +38,7 @@ export function ClipVideoPage() {
 
   return (
     <div className={`h-screen w-screen ${colors.bg} ${colors.text} flex flex-col`}>
-      <header className={`h-14 flex-shrink-0 border-b ${colors.border} ${colors.bgSecondary}`}>
-        <div className="h-full px-3 md:px-4 flex items-center justify-between">
-          <div className="flex-1 min-w-0 mr-2">
-            <Breadcrumb items={breadcrumbItems} />
-          </div>
-
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className={`p-1.5 md:p-2 rounded-full transition-colors ${colors.bgHover} flex-shrink-0`}
-          >
-            {darkMode ? <Sun className="w-4 h-4 md:w-5 md:h-5" /> : <Moon className="w-4 h-4 md:w-5 md:h-5" />}
-          </button>
-        </div>
-      </header>
+      <Header breadcrumbItems={breadcrumbItems} />
 
       <main className="flex-1 overflow-auto p-4 md:p-6">
         <div className="max-w-4xl mx-auto">

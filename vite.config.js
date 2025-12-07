@@ -11,6 +11,11 @@ export default defineConfig({
         target: 'https://nahuelviera.dev',
         changeOrigin: true,
       },
+      '/ws': {
+        target: 'wss://nahuelviera.dev',
+        ws: true,  // Enable WebSocket proxying
+        changeOrigin: true,
+      },
     },
   },
 })

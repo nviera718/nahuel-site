@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { Plus, FolderOpen, Moon, Sun, Trash2 } from 'lucide-react'
+import { Plus, FolderOpen, Trash2 } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { useTheme } from '../context/ThemeContext'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
-import { Breadcrumb } from '../components/ui/Breadcrumb'
+import { Header } from '../components/ui/Header'
 
 function AddCategoryDialog({ isOpen, onClose, onSubmit, isLoading, error }) {
   const { colors } = useTheme()
@@ -169,17 +169,7 @@ export function CategoriesPage() {
 
   return (
     <div className={`h-screen ${colors.bg} ${colors.text} flex flex-col`}>
-      <header className={`h-14 flex-shrink-0 border-b ${colors.border} ${colors.bgSecondary}`}>
-        <div className="h-full px-4 md:px-6 flex items-center justify-between">
-          <Breadcrumb items={breadcrumbItems} />
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className={`p-2 rounded-full transition-colors ${colors.bgHover}`}
-          >
-            {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
-        </div>
-      </header>
+      <Header breadcrumbItems={breadcrumbItems} />
 
       <main className="flex-1 overflow-auto p-4 md:p-6">
         <div className="max-w-4xl mx-auto">

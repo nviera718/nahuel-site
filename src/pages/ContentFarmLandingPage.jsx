@@ -1,7 +1,7 @@
 import { useNavigate } from '@tanstack/react-router'
-import { Moon, Sun, FolderOpen, Scissors, Film } from 'lucide-react'
+import { FolderOpen, Scissors, Film } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
-
+import { Header } from '../components/ui/Header'
 function NavCard({ title, description, icon: Icon, onClick, colors }) {
   return (
     <div
@@ -23,19 +23,13 @@ export function ContentFarmLandingPage() {
   const navigate = useNavigate()
   const { darkMode, setDarkMode, colors } = useTheme()
 
+  const breadcrumbItems = [
+    { label: 'Content Farm' }
+  ]
+
   return (
     <div className={`h-screen ${colors.bg} ${colors.text} flex flex-col`}>
-      <header className={`h-14 flex-shrink-0 border-b ${colors.border} ${colors.bgSecondary}`}>
-        <div className="h-full px-4 md:px-6 flex items-center justify-between">
-          <span className="text-base font-semibold">Content Farm</span>
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className={`p-2 rounded-full transition-colors ${colors.bgHover}`}
-          >
-            {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
-        </div>
-      </header>
+      <Header breadcrumbItems={breadcrumbItems} showQueue={false} />
 
       <main className="flex-1 overflow-auto p-4 md:p-6">
         <div className="max-w-4xl mx-auto">

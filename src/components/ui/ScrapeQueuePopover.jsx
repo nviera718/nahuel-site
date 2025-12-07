@@ -1,0 +1,226 @@
+import { useState, useEffect, useRef } from 'react'
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
+import { ListOrdered, X, Trash2 } from 'lucide-react'
+import { api } from '../../lib/api-client'
+import { useTheme } from '../../context/ThemeContext'
+import { ConfirmDialog } from './ConfirmDialog'
+import { useWebSocketStats } from '../../hooks/useWebSocketStats'
+
+export function ScrapeQueuePopover() {
+  const [isOpen, setIsOpen] = useState(false)
+  const popoverRef = useRef(null)
+  const { colors } = useTheme()
+  const queryClient = useQueryClient()
+
+  // Remove confirmation dialog state
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
+  const [itemToRemove, setItemToRemove] = useState(null)
+
+  // Use WebSocket for real-time stats
+  const { queue, recentItems, isConnected } = useWebSocketStats()
+
+  // Fetch all categories to get category names
+  const { data: categoriesData } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => api.categories.getAll(),
+  })
+  const categoriesMap = new Map((categoriesData?.categories || []).map(cat => [cat.id, cat.name]))
+
+  const removeMutation = useMutation({
+    mutationFn: (queueId) => api.queue.remove(queueId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scrapeQueue'] })
+      setRemoveDialogOpen(false)
+      setItemToRemove(null)
+    },
+  })
+
+  const handleRemoveClick = (item) => {
+    setItemToRemove(item)
+    setRemoveDialogOpen(true)
+  }
+
+  const handleConfirmRemove = () => {
+    if (itemToRemove) {
+      removeMutation.mutate(itemToRemove.id)
+    }
+  }
+
+  // Close popover when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (popoverRef.current && !popoverRef.current.contains(event.target)) {
+        setIsOpen(false)
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isOpen])
+
+  // Calculate total pending from WebSocket stats
+  const pendingCount = queue?.pending || 0
+  const inProgressCount = queue?.inProgress || 0
+  const totalActiveCount = pendingCount + inProgressCount
+  const items = recentItems || []
+
+  return (
+    <div className="relative" ref={popoverRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`relative p-2 rounded-full transition-colors ${colors.bgHover} ${isOpen ? colors.bgTertiary : ''}`}
+        title="Scrape Queue"
+      >
+        <ListOrdered className="w-5 h-5" />
+        {totalActiveCount > 0 && (
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+            {totalActiveCount > 99 ? '99+' : totalActiveCount}
+          </span>
+        )}
+        {!isConnected && (
+          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full" title="Disconnected" />
+        )}
+      </button>
+
+      {isOpen && (
+        <div
+          className={`absolute right-0 mt-2 w-80 ${colors.bgSecondary} border ${colors.border} rounded-lg shadow-xl z-50`}
+          style={{ top: '100%' }}
+        >
+          <div className={`p-3 border-b ${colors.border} flex items-center justify-between`}>
+            <h3 className={`font-semibold ${colors.text}`}>Scrape Queue</h3>
+            <button
+              onClick={() => setIsOpen(false)}
+              className={`p-1 rounded transition-colors ${colors.bgHover}`}
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="max-h-96 overflow-y-auto">
+            {!queue ? (
+              <div className={`p-8 text-center ${colors.textSecondary}`}>
+                <ListOrdered className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">
+                  {isConnected ? 'Loading queue...' : 'Disconnected'}
+                </p>
+              </div>
+            ) : items.length === 0 ? (
+              <div className={`p-8 text-center ${colors.textSecondary}`}>
+                <ListOrdered className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No recent items</p>
+              </div>
+            ) : (
+              <div className="p-2">
+                {items.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`p-3 rounded-lg ${colors.bgTertiary} mb-2 last:mb-0`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`font-medium truncate ${colors.text}`}>
+                            {item.username}
+                          </span>
+                          <span className={`text-xs px-1.5 py-0.5 rounded ${getPlatformColor(item.platform)}`}>
+                            {item.platform}
+                          </span>
+                        </div>
+                        {item.category_id && categoriesMap.has(item.category_id) && (
+                          <div className={`text-xs ${colors.textSecondary} mb-1`}>
+                            {categoriesMap.get(item.category_id)}
+                          </div>
+                        )}
+                        <div className={`text-xs ${colors.textSecondary}`}>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-1.5 py-0.5 rounded ${getStatusColor(item.status)}`}>
+                              {item.status}
+                            </span>
+                            {item.priority > 0 && (
+                              <span className="text-yellow-400">
+                                Priority: {item.priority}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleRemoveClick(item)}
+                        disabled={removeMutation.isPending || item.status !== 'pending'}
+                        className={`p-1.5 rounded transition-colors ${item.status === 'pending' ? 'hover:bg-red-500/20 text-red-400' : 'opacity-30 cursor-not-allowed'}`}
+                        title={item.status === 'pending' ? 'Remove from queue' : 'Cannot remove (not pending)'}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {queue && (queue.total > 0 || totalActiveCount > 0) && (
+            <div className={`p-3 border-t ${colors.border}`}>
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <div className={`${colors.textSecondary} mb-1`}>Pending</div>
+                  <div className={`text-lg font-semibold text-yellow-400`}>{pendingCount}</div>
+                </div>
+                <div>
+                  <div className={`${colors.textSecondary} mb-1`}>In Progress</div>
+                  <div className={`text-lg font-semibold text-blue-400`}>{inProgressCount}</div>
+                </div>
+                <div>
+                  <div className={`${colors.textSecondary} mb-1`}>Completed</div>
+                  <div className={`text-lg font-semibold text-green-400`}>{queue.completed || 0}</div>
+                </div>
+                <div>
+                  <div className={`${colors.textSecondary} mb-1`}>Failed</div>
+                  <div className={`text-lg font-semibold text-red-400`}>{queue.failed || 0}</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <ConfirmDialog
+        isOpen={removeDialogOpen}
+        onClose={() => {
+          setRemoveDialogOpen(false)
+          setItemToRemove(null)
+        }}
+        onConfirm={handleConfirmRemove}
+        title="Remove from Queue"
+        message={itemToRemove
+          ? `Remove "${itemToRemove.username}" from the scrape queue?`
+          : ''
+        }
+        confirmText="Remove"
+        isLoading={removeMutation.isPending}
+      />
+    </div>
+  )
+}
+
+function getPlatformColor(platform) {
+  const colors = {
+    Instagram: 'bg-gradient-to-r from-purple-500 to-pink-500 text-white',
+    YouTube: 'bg-red-500 text-white',
+    TikTok: 'bg-black text-white',
+  }
+  return colors[platform] || 'bg-gray-500 text-white'
+}
+
+function getStatusColor(status) {
+  const colors = {
+    pending: 'bg-yellow-500/20 text-yellow-400',
+    in_progress: 'bg-blue-500/20 text-blue-400',
+    completed: 'bg-green-500/20 text-green-400',
+    failed: 'bg-red-500/20 text-red-400',
+  }
+  return colors[status] || 'bg-gray-500/20 text-gray-400'
+}

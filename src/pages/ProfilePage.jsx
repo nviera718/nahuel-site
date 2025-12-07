@@ -7,14 +7,14 @@ import {
   getSortedRowModel,
   flexRender,
 } from '@tanstack/react-table'
-import { ExternalLink, Search, ChevronUp, ChevronDown, Moon, Sun, Filter, X, Trash2, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ExternalLink, Search, ChevronUp, ChevronDown, Filter, X, Trash2, Plus, ChevronLeft, ChevronRight, ListPlus } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { useTheme } from '../context/ThemeContext'
 import { Dropdown } from '../components/ui/Dropdown'
 import { MultiSelect } from '../components/ui/MultiSelect'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
-import { Breadcrumb } from '../components/ui/Breadcrumb'
 import { AddProfileDialog } from '../components/ui/AddProfileDialog'
+import { Header } from '../components/ui/Header'
 
 const STORAGE_KEY_PANEL = 'profiles_filter_panel_open'
 const STORAGE_KEY_FILTERS = 'profiles_filters'
@@ -38,7 +38,7 @@ const REVIEW_STATUS_OPTIONS = [
   { value: 'fully_reviewed', label: 'Fully Reviewed' },
 ]
 
-const createColumns = (onDelete) => [
+const createColumns = (onDelete, onQueue, onRemoveFromQueue, queuedProfileIds) => [
   {
     accessorKey: 'username',
     header: 'Profile',
@@ -106,33 +106,59 @@ const createColumns = (onDelete) => [
     id: 'actions',
     header: '',
     enableSorting: false,
-    cell: ({ row }) => (
-      <div className="flex items-center gap-1">
-        <a
-          href={row.original.profile_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="p-2 hover:bg-[#272727] rounded-lg transition-colors inline-flex opacity-70"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <ExternalLink className="w-4 h-4" />
-        </a>
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            onDelete(row.original)
-          }}
-          className="p-2 hover:bg-red-500/20 rounded-lg transition-colors inline-flex opacity-70 hover:opacity-100 text-red-400"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-      </div>
-    ),
+    cell: ({ row }) => {
+      const isQueued = queuedProfileIds.has(row.original.id)
+      return (
+        <div className="flex items-center gap-1">
+          {isQueued ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onRemoveFromQueue(row.original)
+              }}
+              className="p-2 hover:bg-orange-500/20 rounded-lg transition-colors inline-flex opacity-70 hover:opacity-100 text-orange-400"
+              title="Remove from scrape queue"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onQueue(row.original)
+              }}
+              className="p-2 hover:bg-blue-500/20 rounded-lg transition-colors inline-flex opacity-70 hover:opacity-100 text-blue-400"
+              title="Add to scrape queue"
+            >
+              <ListPlus className="w-4 h-4" />
+            </button>
+          )}
+          <a
+            href={row.original.profile_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 hover:bg-[#272727] rounded-lg transition-colors inline-flex opacity-70"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ExternalLink className="w-4 h-4" />
+          </a>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete(row.original)
+            }}
+            className="p-2 hover:bg-red-500/20 rounded-lg transition-colors inline-flex opacity-70 hover:opacity-100 text-red-400"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      )
+    },
   },
 ]
 
 // Mobile card component
-function ProfileCard({ profile, onClick, onDelete, colors }) {
+function ProfileCard({ profile, onClick, onDelete, onQueue, onRemoveFromQueue, isQueued, colors }) {
   const unreviewed = parseInt(profile.unreviewed_posts) || 0
   const total = parseInt(profile.total_posts) || 0
   const reviewed = total - unreviewed
@@ -162,6 +188,29 @@ function ProfileCard({ profile, onClick, onDelete, colors }) {
           </div>
         </div>
         <div className="flex items-center gap-1">
+          {isQueued ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onRemoveFromQueue(profile)
+              }}
+              className="p-2 hover:bg-orange-500/20 rounded-lg transition-colors text-orange-400"
+              title="Remove from scrape queue"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onQueue(profile)
+              }}
+              className="p-2 hover:bg-blue-500/20 rounded-lg transition-colors text-blue-400"
+              title="Add to scrape queue"
+            >
+              <ListPlus className="w-4 h-4" />
+            </button>
+          )}
           <a
             href={profile.profile_url}
             target="_blank"
@@ -233,6 +282,14 @@ export function ProfilePage() {
   })
   const category = categoryData?.category
 
+  // Fetch queue data
+  const { data: queueData } = useQuery({
+    queryKey: ['scrapeQueue'],
+    queryFn: () => api.queue.getAll({ status: 'pending', limit: 100 }),
+    refetchInterval: 5000, // Poll every 5s
+  })
+  const queuedProfileIds = new Set((queueData?.queue || []).map(item => item.profile_id))
+
   const breadcrumbItems = [
     { label: 'Content Farm', to: { to: '/content-farm' } },
     { label: 'Categories', to: { to: '/content-farm/categories' } },
@@ -242,6 +299,10 @@ export function ProfilePage() {
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [profileToDelete, setProfileToDelete] = useState(null)
+
+  // Remove from queue dialog state
+  const [removeQueueDialogOpen, setRemoveQueueDialogOpen] = useState(false)
+  const [queueItemToRemove, setQueueItemToRemove] = useState(null)
 
   // Add profile dialog state
   const [addDialogOpen, setAddDialogOpen] = useState(false)
@@ -271,9 +332,46 @@ export function ProfilePage() {
     },
   })
 
+  // Queue mutation
+  const queueMutation = useMutation({
+    mutationFn: (profileId) => api.queue.add({ profileIds: [profileId], priority: 0, options: { limit: 50 } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scrapeQueue'] })
+    },
+  })
+
+  // Remove from queue mutation
+  const removeQueueMutation = useMutation({
+    mutationFn: (queueId) => api.queue.remove(queueId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scrapeQueue'] })
+      setRemoveQueueDialogOpen(false)
+      setQueueItemToRemove(null)
+    },
+  })
+
   const handleDeleteClick = (profile) => {
     setProfileToDelete(profile)
     setDeleteDialogOpen(true)
+  }
+
+  const handleQueueClick = (profile) => {
+    queueMutation.mutate(profile.id)
+  }
+
+  const handleRemoveFromQueueClick = (profile) => {
+    // Find queue item for this profile
+    const queueItem = (queueData?.queue || []).find(item => item.profile_id === profile.id)
+    if (queueItem) {
+      setQueueItemToRemove(queueItem)
+      setRemoveQueueDialogOpen(true)
+    }
+  }
+
+  const handleConfirmRemoveFromQueue = () => {
+    if (queueItemToRemove) {
+      removeQueueMutation.mutate(queueItemToRemove.id)
+    }
   }
 
   const handleConfirmDelete = () => {
@@ -449,7 +547,7 @@ export function ProfilePage() {
     syncToUrl(buildSearchObject({ page: newPage }))
   }
 
-  const columns = useMemo(() => createColumns(handleDeleteClick), [])
+  const columns = useMemo(() => createColumns(handleDeleteClick, handleQueueClick, handleRemoveFromQueueClick, queuedProfileIds), [handleQueueClick, handleRemoveFromQueueClick, queuedProfileIds])
 
   const table = useReactTable({
     data: profiles,
@@ -468,17 +566,7 @@ export function ProfilePage() {
 
   return (
     <div className={`h-screen ${colors.bg} ${colors.text} flex flex-col`}>
-      <header className={`h-14 flex-shrink-0 border-b ${colors.border} ${colors.bgSecondary}`}>
-        <div className="h-full px-4 md:px-6 flex items-center justify-between">
-          <Breadcrumb items={breadcrumbItems} />
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className={`p-2 rounded-full transition-colors ${colors.bgHover}`}
-          >
-            {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
-        </div>
-      </header>
+      <Header breadcrumbItems={breadcrumbItems} />
 
       <main className="flex-1 overflow-hidden p-4 md:p-6">
         <div className="h-full max-w-6xl mx-auto flex flex-col">
@@ -576,6 +664,9 @@ export function ProfilePage() {
                     colors={colors}
                     onClick={() => navigate({ to: '/content-farm/categories/$categorySlug/$profileId', params: { categorySlug, profileId: row.original.id } })}
                     onDelete={handleDeleteClick}
+                    onQueue={handleQueueClick}
+                    onRemoveFromQueue={handleRemoveFromQueueClick}
+                    isQueued={queuedProfileIds.has(row.original.id)}
                   />
                 ))}
                 {rows.length === 0 && (
@@ -684,6 +775,22 @@ export function ProfilePage() {
         }
         confirmText="Delete"
         isLoading={deleteMutation.isPending}
+      />
+
+      <ConfirmDialog
+        isOpen={removeQueueDialogOpen}
+        onClose={() => {
+          setRemoveQueueDialogOpen(false)
+          setQueueItemToRemove(null)
+        }}
+        onConfirm={handleConfirmRemoveFromQueue}
+        title="Remove from Queue"
+        message={queueItemToRemove
+          ? `Remove "${queueItemToRemove.username}" from the scrape queue?`
+          : ''
+        }
+        confirmText="Remove"
+        isLoading={removeQueueMutation.isPending}
       />
 
       <AddProfileDialog
