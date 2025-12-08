@@ -125,29 +125,52 @@ export function ScrapeQueuePopover() {
       </button>
 
       {isOpen && (
-        <div
-          className={`absolute right-0 mt-2 w-80 ${colors.bgSecondary} border ${colors.border} rounded-lg shadow-xl z-50 flex flex-col`}
-          style={{ top: '100%', maxHeight: 'calc(100vh - 100px)' }}
-        >
+        <>
+          {/* Mobile backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setIsOpen(false)}
+          />
+
+          {/* Popover - Full screen on mobile, floating on desktop */}
+          <div
+            className={`
+              fixed md:absolute
+              inset-x-0 bottom-0 md:inset-auto md:right-0 md:top-full md:mt-2
+              w-full md:w-[560px]
+              max-h-[85vh] md:max-h-[80vh]
+              ${colors.bgSecondary} border ${colors.border}
+              rounded-t-2xl md:rounded-lg
+              shadow-2xl z-50
+              flex flex-col
+            `}
+          >
           {/* Header */}
-          <div className={`p-3 border-b ${colors.border} flex items-center justify-between flex-shrink-0`}>
-            <h3 className={`font-semibold ${colors.text}`}>Scrape Queue</h3>
-            <button
-              onClick={() => setIsOpen(false)}
-              className={`p-1 rounded transition-colors ${colors.bgHover}`}
-            >
-              <X className="w-4 h-4" />
-            </button>
+          <div className={`p-4 md:p-3 border-b ${colors.border} flex-shrink-0`}>
+            {/* Mobile drag handle */}
+            <div className="flex justify-center mb-2 md:hidden">
+              <div className={`w-12 h-1 rounded-full ${colors.bgTertiary}`} />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <h3 className={`font-semibold ${colors.text} text-lg md:text-base`}>Scrape Queue</h3>
+              <button
+                onClick={() => setIsOpen(false)}
+                className={`p-1 rounded transition-colors ${colors.bgHover}`}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* Action Buttons */}
           {(hasPermission(PERMISSIONS.START_SCRAPE) || hasPermission(PERMISSIONS.MANAGE_SCRAPE_QUEUE)) && (
-            <div className={`p-3 border-b ${colors.border} flex gap-2 flex-shrink-0`}>
+            <div className={`p-4 md:p-3 border-b ${colors.border} flex gap-2 flex-shrink-0`}>
               {hasPermission(PERMISSIONS.START_SCRAPE) && (
                 <button
                   onClick={handleScrapeClick}
                   disabled={scrapeMutation.isPending || pendingCount === 0}
-                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded transition-colors ${
+                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 md:py-2 rounded transition-colors ${
                     pendingCount > 0 && !scrapeMutation.isPending
                       ? 'bg-blue-500 hover:bg-blue-600 text-white'
                       : 'bg-gray-500/20 text-gray-400 cursor-not-allowed'
@@ -164,7 +187,7 @@ export function ScrapeQueuePopover() {
                 <button
                   onClick={handleRemoveAllClick}
                   disabled={clearPendingMutation.isPending || pendingCount === 0}
-                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded transition-colors ${
+                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 md:py-2 rounded transition-colors ${
                     pendingCount > 0 && !clearPendingMutation.isPending
                       ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400'
                       : 'bg-gray-500/20 text-gray-400 cursor-not-allowed'
@@ -221,7 +244,7 @@ export function ScrapeQueuePopover() {
 
           {/* Download Queue Stats */}
           {downloadQueueStats && downloadQueueStats.total > 0 && (
-            <div className={`border-b ${colors.border} flex-shrink-0 p-3 ${colors.bgTertiary}`}>
+            <div className={`border-b ${colors.border} flex-shrink-0 p-4 md:p-3 ${colors.bgTertiary}`}>
               <div className="flex items-center justify-between mb-2">
                 <span className={`text-xs font-medium ${colors.textSecondary}`}>Video Downloads</span>
                 {downloadQueueStats.isRunning && (
@@ -267,11 +290,11 @@ export function ScrapeQueuePopover() {
                 <p className="text-sm">No recent items</p>
               </div>
             ) : (
-              <div className="p-2">
+              <div className="p-3 md:p-2">
                 {items.map((item) => (
                   <div
                     key={item.id}
-                    className={`p-3 rounded-lg ${colors.bgTertiary} mb-2 last:mb-0`}
+                    className={`p-4 md:p-3 rounded-lg ${colors.bgTertiary} mb-3 md:mb-2 last:mb-0`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
@@ -318,6 +341,7 @@ export function ScrapeQueuePopover() {
             )}
           </div>
         </div>
+        </>
       )}
 
       <ConfirmDialog

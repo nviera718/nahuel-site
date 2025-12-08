@@ -738,12 +738,12 @@ export function ProfilePage() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className={`flex items-center justify-between mt-4 px-2`}>
-                  <div className={`text-sm ${colors.textSecondary}`}>
+                <div className={`flex flex-col md:flex-row md:items-center md:justify-between mt-4 px-2 gap-3 md:gap-0`}>
+                  <div className={`text-xs md:text-sm ${colors.textSecondary} text-center md:text-left order-2 md:order-1`}>
                     Showing {page * PAGE_SIZE + 1}-{Math.min((page + 1) * PAGE_SIZE, totalCount)} of {totalCount}
                     {isFetching && <span className="ml-2 opacity-50">Loading...</span>}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center gap-2 order-1 md:order-2">
                     <button
                       onClick={() => goToPage(page - 1)}
                       disabled={page === 0}
@@ -751,7 +751,7 @@ export function ProfilePage() {
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <span className={`text-sm ${colors.textSecondary} tabular-nums`}>
+                    <span className={`text-sm ${colors.textSecondary} tabular-nums min-w-[100px] text-center`}>
                       Page {page + 1} of {totalPages}
                     </span>
                     <button
