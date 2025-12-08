@@ -504,8 +504,20 @@ export function ProfileVideosPage() {
                   />
                 ))}
                 {rows.length === 0 && (
-                  <div className={`py-12 text-center ${colors.textSecondary}`}>
-                    {globalFilter || activeFilterCount > 0 ? 'No videos match your filters' : 'No videos found for this profile'}
+                  <div className={`py-16 px-4 text-center ${colors.textSecondary}`}>
+                    {globalFilter || activeFilterCount > 0 ? (
+                      <>
+                        <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p className="text-base mb-2">No videos match your filters</p>
+                        <p className="text-sm">Try adjusting your search or filters</p>
+                      </>
+                    ) : (
+                      <>
+                        <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p className="text-base mb-2">No videos found</p>
+                        <p className="text-sm mb-4">This profile hasn't been scraped yet or has no video posts</p>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -548,8 +560,20 @@ export function ProfileVideosPage() {
                   </table>
 
                   {rows.length === 0 && (
-                    <div className={`py-12 text-center ${colors.textSecondary}`}>
-                      {globalFilter || activeFilterCount > 0 ? 'No videos match your filters' : 'No videos found for this profile'}
+                    <div className={`py-16 px-4 text-center ${colors.textSecondary}`}>
+                      {globalFilter || activeFilterCount > 0 ? (
+                        <>
+                          <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                          <p className="text-base mb-2">No videos match your filters</p>
+                          <p className="text-sm">Try adjusting your search or filters</p>
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                          <p className="text-base mb-2">No videos found</p>
+                          <p className="text-sm mb-4">This profile hasn't been scraped yet or has no video posts</p>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { InstagramEmbed } from '../components/InstagramEmbed'
+import { VideoPlayer } from '../components/VideoPlayer'
 import { ClassificationForm } from '../components/ClassificationForm'
 import { usePost } from '../hooks/usePost'
 import { useClassification, useCreateClassification, useUpdateClassification } from '../hooks/useClassification'
@@ -378,9 +378,9 @@ export function VideoClassifierPage() {
               transition={{ duration: 0.15 }}
               className="min-h-full flex flex-col lg:flex-row lg:pt-20 items-center lg:items-start lg:justify-center gap-4 lg:gap-8 p-4 lg:px-8"
             >
-              {/* Video embed */}
+              {/* Video player */}
               <div className="flex-shrink-0 w-full max-w-[400px] lg:max-w-none lg:w-auto pt-2">
-                <InstagramEmbed postUrl={post.post_url} darkMode={darkMode} />
+                <VideoPlayer post={post} darkMode={darkMode} />
               </div>
 
               {/* Classification form */}

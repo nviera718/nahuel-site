@@ -48,4 +48,12 @@ export const api = {
     getJobs: (params) => apiClient.get('/scrape/jobs', { params }).then(res => res.data),
     getStatus: (jobId) => apiClient.get(`/scrape/status/${jobId}`).then(res => res.data),
   },
+  downloadQueue: {
+    getStats: () => apiClient.get('/download-queue/stats').then(res => res.data),
+    getQueue: (params) => apiClient.get('/download-queue', { params }).then(res => res.data),
+    enqueue: (data) => apiClient.post('/download-queue/enqueue', data).then(res => res.data),
+    retryFailed: (data) => apiClient.post('/download-queue/retry-failed', data).then(res => res.data),
+    start: () => apiClient.post('/download-queue/start').then(res => res.data),
+    stop: () => apiClient.post('/download-queue/stop').then(res => res.data),
+  },
 }

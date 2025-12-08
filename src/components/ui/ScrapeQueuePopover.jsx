@@ -25,6 +25,13 @@ export function ScrapeQueuePopover() {
   // Use WebSocket for real-time stats
   const { queue, recentItems, isConnected } = useWebSocketStats()
 
+  // Fetch download queue stats
+  const { data: downloadQueueStats } = useQuery({
+    queryKey: ['download-queue-stats'],
+    queryFn: () => api.downloadQueue.getStats(),
+    refetchInterval: isOpen ? 3000 : false, // Refresh every 3s when open
+  })
+
   // Fetch all categories to get category names
   const { data: categoriesData } = useQuery({
     queryKey: ['categories'],
@@ -180,7 +187,7 @@ export function ScrapeQueuePopover() {
                 onClick={() => setStatsExpanded(!statsExpanded)}
                 className={`w-full p-3 flex items-center justify-between ${colors.bgHover} transition-colors`}
               >
-                <span className={`text-sm font-medium ${colors.text}`}>Queue Stats</span>
+                <span className={`text-sm font-medium ${colors.text}`}>Scrape Queue</span>
                 {statsExpanded ? (
                   <ChevronUp className="w-4 h-4" />
                 ) : (
@@ -209,6 +216,39 @@ export function ScrapeQueuePopover() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Download Queue Stats */}
+          {downloadQueueStats && downloadQueueStats.total > 0 && (
+            <div className={`border-b ${colors.border} flex-shrink-0 p-3 ${colors.bgTertiary}`}>
+              <div className="flex items-center justify-between mb-2">
+                <span className={`text-xs font-medium ${colors.textSecondary}`}>Video Downloads</span>
+                {downloadQueueStats.isRunning && (
+                  <span className="flex items-center gap-1 text-xs text-green-400">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                    Active
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                <div>
+                  <div className={`text-base font-semibold text-yellow-400`}>{downloadQueueStats.pending || 0}</div>
+                  <div className={`${colors.textSecondary}`}>Queued</div>
+                </div>
+                <div>
+                  <div className={`text-base font-semibold text-blue-400`}>{downloadQueueStats.processing || 0}</div>
+                  <div className={`${colors.textSecondary}`}>Downloading</div>
+                </div>
+                <div>
+                  <div className={`text-base font-semibold text-green-400`}>{downloadQueueStats.completed || 0}</div>
+                  <div className={`${colors.textSecondary}`}>Done</div>
+                </div>
+                <div>
+                  <div className={`text-base font-semibold text-red-400`}>{downloadQueueStats.failed || 0}</div>
+                  <div className={`${colors.textSecondary}`}>Failed</div>
+                </div>
+              </div>
             </div>
           )}
 
