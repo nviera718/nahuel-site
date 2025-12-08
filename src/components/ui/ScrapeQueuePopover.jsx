@@ -138,7 +138,7 @@ export function ScrapeQueuePopover() {
               fixed md:absolute
               inset-x-0 bottom-0 md:inset-auto md:right-0 md:top-full md:mt-2
               w-full md:w-[560px]
-              max-h-[85vh] md:max-h-[80vh]
+              max-h-[93vh] md:max-h-[80vh]
               ${colors.bgSecondary} border ${colors.border}
               rounded-t-2xl md:rounded-lg
               shadow-2xl z-50

@@ -290,31 +290,37 @@ export function VideoClassifierPage() {
   const canGoNext = !showAllDone
   const isLastVideo = currentIndex === postIds.length - 1
 
+  // Navigation controls component (reused in header and bottom bar)
+  const NavigationControls = ({ className = '' }) => (
+    <div className={`flex items-center ${colors.bgTertiary} rounded-full ${className}`}>
+      <button
+        onClick={goToPrev}
+        disabled={!canGoPrev}
+        className={`p-1.5 md:p-2 rounded-full transition-colors ${!canGoPrev ? 'opacity-30 cursor-not-allowed' : colors.bgHover}`}
+      >
+        <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
+      </button>
+      <span className={`text-xs md:text-sm font-medium px-1 md:px-2 min-w-[50px] md:min-w-[60px] text-center ${colors.text}`}>
+        {showAllDone ? 'Done' : currentIndex >= 0 ? `${currentIndex + 1}/${postIds.length}` : '...'}
+      </span>
+      <button
+        onClick={goToNext}
+        disabled={!canGoNext}
+        className={`p-1.5 md:p-2 rounded-full transition-colors ${!canGoNext ? 'opacity-30 cursor-not-allowed' : colors.bgHover}`}
+      >
+        <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
+      </button>
+    </div>
+  )
+
   return (
     <div className={`h-screen w-screen ${colors.bg} ${colors.text} flex flex-col`}>
       <Header breadcrumbItems={breadcrumbItems} showUserProfile={true}>
-        <div className={`flex items-center ${colors.bgTertiary} rounded-full`}>
-          <button
-            onClick={goToPrev}
-            disabled={!canGoPrev}
-            className={`p-1.5 md:p-2 rounded-full transition-colors ${!canGoPrev ? 'opacity-30 cursor-not-allowed' : colors.bgHover}`}
-          >
-            <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
-          </button>
-          <span className={`text-xs md:text-sm font-medium px-1 md:px-2 min-w-[50px] md:min-w-[60px] text-center ${colors.text}`}>
-            {showAllDone ? 'Done' : currentIndex >= 0 ? `${currentIndex + 1}/${postIds.length}` : '...'}
-          </span>
-          <button
-            onClick={goToNext}
-            disabled={!canGoNext}
-            className={`p-1.5 md:p-2 rounded-full transition-colors ${!canGoNext ? 'opacity-30 cursor-not-allowed' : colors.bgHover}`}
-          >
-            <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
-          </button>
-        </div>
+        {/* Show navigation in header on desktop only */}
+        <NavigationControls className="hidden md:flex" />
       </Header>
 
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto pb-20 md:pb-0">
         <AnimatePresence mode="wait">
           {showAllDone ? (
             <motion.div
@@ -402,6 +408,11 @@ export function VideoClassifierPage() {
           ) : null}
         </AnimatePresence>
       </main>
+
+      {/* Bottom navigation bar - mobile only */}
+      <div className={`md:hidden fixed bottom-0 left-0 right-0 border-t ${colors.border} ${colors.bgSecondary} px-4 py-3 flex items-center justify-center`}>
+        <NavigationControls />
+      </div>
     </div>
   )
 }
